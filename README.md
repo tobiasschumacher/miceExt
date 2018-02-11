@@ -63,17 +63,19 @@ the `with()` function.
 In this example, we want to impute the categorical columns `gen` and `phb` in the data set `boys` that is
 included in the mice-package with the functionalities of the package. This works in three main steps:
 
-1. Binarize the factor columns in boys the we want to impute on:
+1. Binarize the factor columns in boys the we want to impute on:  
 	`boys_bin <- mice.binarize(boys, cols = c("gen", "phb"))`
 
 2. Run mice on binarized data (note that we need to grab boys_bin$data) and post-process it with mice.post.matching``,
    as it is very likely that mice imputed multiple ones among one set of dummy variables:  
-	 `mids_boys <- mice(boys_bin$data)`  
-	 `post_boys <- mice.post.matching(mids_boys, distmetric = "residual")`
+	 ```
+	 mids_boys <- mice(boys_bin$data)  
+	 post_boys <- mice.post.matching(mids_boys, distmetric = "residual")
+	 ```
 
 3. Restransform the resulting imputations back into categorical format:  
 	 `res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)`
 
 Also in this case, we can analyze the resulting imputed dataset via the `with()` function. If, e.g., we want to take
-a closer look at the distribution of the values of 'gen', we can use:  
+a closer look at the distribution of the values of `gen`, we can use:  
 	`with(res_boys, table(gen))`
