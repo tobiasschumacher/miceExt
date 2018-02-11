@@ -18,6 +18,8 @@ Author: Tobias Schumacher [aut, cre],
 		Philipp Gaffert [aut],
 		Stef van Buuren [ctb],
 		Karin Groothuis-Oudshoorn [ctb]
+URL: http://github.com/tobiasschumacher/miceExt
+BugReports: http://github.com/tobiasschumacher/miceExt/issues
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
