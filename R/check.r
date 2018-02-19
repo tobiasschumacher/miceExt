@@ -6,7 +6,7 @@
 ###########################################################################################################################################################
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_cols
 # function dedicated to check whether input list of vector tuples [cols] in mice.post.matching() is valid
 # -> each element of cols represents a tuple of columns that are contextually intertwined
@@ -16,10 +16,15 @@
 #   or characters for column names,that actually appear in the data, with no duplicates among them
 # - as vectors are contextually intertwined, the row in the mids$where-matrix in those columns shouuld be identical
 # - imputation methods on those colum either have to be "pmm" or "norm" to guarantee matching in post-processing that is consistent with previous run of mice
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_cols <- function(obj, cols)
 {
+  #----------------------------------------------------------------------------------------------------------------
+  # First define some helper functions
+  #----------------------------------------------------------------------------------------------------------------
+  
+  
   # helper function that checks whether a single tuple of column names or indices is valid and converts column names to their respective index values
   check_cols_tuple <- function(tuple)
   {
@@ -145,7 +150,12 @@ check_cols <- function(obj, cols)
     
     return(cols)
   }
-
+  
+  
+  #----------------------------------------------------------------------------------------------------------------
+  # !!! ACTUAL CHECK FUNCTION BEGINS HERE !!!
+  #----------------------------------------------------------------------------------------------------------------
+  
   # initialize some helper variables
   where <- obj$where
   nvar <- ncol(obj$data)
@@ -178,16 +188,14 @@ check_cols <- function(obj, cols)
     # check whether there are duplicate columns among all tuples
     if(anyDuplicated(unlist(cols))>0)
       stop("Argument 'cols' contains duplicate columns among its elements.\n")
-    
   }
-  
 
   return(cols)
 }
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_weights_list
 # function dedicated to check whether input list of dimension weights [weights_list] in mice.post.matching() is valid
 # -> each element of weihghts_list represents a tuple of weights that is related to column tuple of same index in cols
@@ -197,10 +205,15 @@ check_cols <- function(obj, cols)
 #   containing only postitive numbers
 # - alternatively, an element of the list may be NULL, 0 or 1 which are substitute values that indicates that no weights are to be applied on current
 #   column tuple, or weights_list may be NULL to indicate that no weights should be applied at all
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
-check_weights_list <- function(weights_list, cols)
+check_weights_list <- function(weights_list, cols, ncols)
 {
+  
+  #----------------------------------------------------------------------------------------------------------------
+  # First define some helper functions
+  #----------------------------------------------------------------------------------------------------------------
+  
   check_weights <- function(weights_index)
   {
     # get current element
@@ -232,14 +245,62 @@ check_weights_list <- function(weights_list, cols)
 
     return(weights)
   }
+  
+  convert_weights_vec <- function(weights_vec)
+  {
+    # check whether weights are numeric
+    if(!is.numeric(weights_vec))
+      stop("Argument 'weights_list' is not numerict.\n")
+    
+    # check whether weights vector has correct length
+    if(length(weights_vec) > ncols)
+      stop("Input weights vector has too many elements.\n")
+    
+    # check whether weights are neither NaN nor infinite
+    if(!all(is.finite(weights_vec)))
+      stop("Argument 'weights_list' contains an element that is either NaN or infinite.\n")
+    
+    # check whether all weights are positive
+    if(!all(weights_vec > 0))
+      stop("Argument 'weights_list' contains a tuple with a non-positive element.\n")
+    
+    if(length(unique(weights_vec[unlist(cols)])) == 1)
+      return(NULL)
+    
+    weights_list <- lapply(cols, 
+      function(tuple)
+      {
+        weights <- weights_vec[tuple]
+        if(length(unique(weights)) == 1)
+          return(NULL)
+        else
+          return(weights)
+      })
+    
+    return(weights_list)
+  }
 
+  
+  #----------------------------------------------------------------------------------------------------------------
+  # !!! ACTUAL CHECK FUNCTION BEGINS HERE !!!
+  #----------------------------------------------------------------------------------------------------------------
+  
   # check for null, which would be valid
   if(is.null(weights_list))
     return(weights_list)
 
   # if weights_list is atomic, make it a list
   if(is.atomic(weights_list))
-    weights_list <- list(weights_list)
+  {
+    if(length(weights_list) < ncols)
+      weights_list <- list(weights_list)
+    else 
+    {
+      weights_list <- convert_weights_vec(weights_list)
+      return(weights_list)
+    }
+  }
+    
 
   # check whether weights_list is of type list
   if(!is.list(weights_list))
@@ -255,7 +316,7 @@ check_weights_list <- function(weights_list, cols)
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_match_vars
 # function dedicated to check whether input argument match_vars of mice.post.matching() is valid
 # -> each element of match_vars represents an extra column in the data that is matched against
@@ -264,7 +325,7 @@ check_weights_list <- function(weights_list, cols)
 # - match_vars should contain either integral numbers, representing column numbers, or characters for columns names, which should all appear in the data
 # - all columns should be either integers or factors to allow a safe split
 # - match_vars should be of the same length as cols, and no element of match_vars should be in the tuple of cols of the same index
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_match_vars <- function(obj, cols, match_vars)
 {
@@ -322,35 +383,9 @@ check_match_vars <- function(obj, cols, match_vars)
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
-# check_match_vars
-# function dedicated to check whether input argument match_vars of mice.post.matching() is valid
-# -> each element of match_vars represents an extra column in the data that is matched against
-#
-# CHECK CRITERIA:
-# - match_vars should contain either integral numbers, representing column numbers, or characters for columns names, which should all appear in the data
-# - all columns should be either integers or factors to allow a safe split
-# - match_vars should be of the same length as cols, and no element of match_vars should be in the tuple of cols of the same index
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-check_bin_weights <- function(bin_weights, cnames)
-{
-  if(is.null(bin_weights))
-    return()
-  
-  if(!is.numeric(bin_weights))
-    stop("Input parameter bin_weights is not a numeric vector.\n")
-  
-  if(names(bin_weights) != cnames)
-    stop("Input parameter bin_weights doesn't fit to input data.\n")
-  
-  if(!all(bin_weights>0))
-    stop("Input parameter bin_weights contains non-positive values.\nGanz flott")
-}
 
 
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_optionals
 # function dedicated to check whether all optional input arguments of mice.post.matching() next to cols and weights_list are valid
 #
@@ -358,11 +393,15 @@ check_bin_weights <- function(bin_weights, cnames)
 # - argument "distmetric" should be a character string in "euclidian", "manhattan", "residual" and "mahalanobis"
 # - arguments "donors" and "matchtype" should be integral values, with matchtype between 0 and 2 and donors bigger than 0
 # - arguments eps, ridge, maxcor shoupld be numeric values bigger than zero
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_optionals <- function(optionals)
 {
 
+  #----------------------------------------------------------------------------------------------------------------
+  # First define some helper functions
+  #----------------------------------------------------------------------------------------------------------------
+  
   check_integral <- function(n,argname)
   {
     # check whether n is numeric
@@ -403,22 +442,28 @@ check_optionals <- function(optionals)
       stop(paste0("Argument '",argname,"' is smaller than 0.\n"))
   }
 
+  
+  #----------------------------------------------------------------------------------------------------------------
+  # !!! ACTUAL CHECK FUNCTION BEGINS HERE !!!
+  #----------------------------------------------------------------------------------------------------------------
+  
+  ## check donors
 
-  ## check whether donors is integral
+  # check whether donors is integral
   optionals$donors <- check_integral(optionals$donors, "donors")
 
-  #check whether donors is bigger than one
+  # check whether donors is bigger than one
   if(optionals$donors < 1)
     stop("Argument 'donors' is smaller than 1.")
 
 
   ## check distmetric
 
-  #check whether distmetric is a character is numeric
+  # check whether distmetric is a character is numeric
   if(!is.character(optionals$distmetric))
     stop("Argument 'distmetric' is not a character string.\n")
 
-  #check whether donors is a single character string
+  # check whether distmetric is a single character string
   if(length(optionals$distmetric) != 1)
     stop("Argument 'distmetric' has to be a one dimensional character vector.\n")
 
@@ -455,7 +500,7 @@ check_optionals <- function(optionals)
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_deep
 #
 # Function dedicated to perform deeper checks on whether the arguments "cols" and "match_vars" of mice.post.matching() work with the input data/mids object,
@@ -474,7 +519,7 @@ check_optionals <- function(optionals)
 #       again in the main function. The whole functionality of this check could also be implemented within the main function, but this would have
 #       the consequence that such errors might be discovered at a late stage of the whole computation, possibly causing the user to run the program for
 #       a long time before an error is detected.
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_deep <- function(obj, cols, match_vars)
 {
@@ -566,7 +611,7 @@ check_deep <- function(obj, cols, match_vars)
 }
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_cols_binarize
 # function dedicated to check whether input argument cols of mice.binarize() are valid
 # -> cols represents a set of factor columns that have to be binarized
@@ -575,7 +620,7 @@ check_deep <- function(obj, cols, match_vars)
 # - each element should be a integer in within range of ncol(data) or a character represeting a column name of the data
 # - each column index should correspond to a factor column
 # - there should be no duplicates
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_cols_binarize <- function(cols, data)
 {
@@ -622,7 +667,7 @@ check_cols_binarize <- function(cols, data)
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_pred_matrix
 # function dedicated to check whether input argument pred_matrix of mice.binarize() is valid
 # -> matrix should be usable as predictorMatrix argument in mice().
@@ -631,7 +676,7 @@ check_cols_binarize <- function(cols, data)
 # - predictor matrix has to be quadratic with as many columns as the original data
 # - all entries should be either 0, 1 or 2
 # - diagonal entires should be 0
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_pred_matrix <- function(pred_matrix, n)
 {
@@ -655,7 +700,7 @@ check_pred_matrix <- function(pred_matrix, n)
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 # check_par_list
 # function dedicated to check whether input argument par:list of mice.factorize is valid
 # -> par_list is a list of parameters containing information of the original data as well as some transformation parameters
@@ -667,7 +712,7 @@ check_pred_matrix <- function(pred_matrix, n)
 # - par_list should be a named list with exactly the elements that are mentioned above
 # - each element should have a valid type and fit to data [e.g. all columns in dummy_cols should indded be binary]
 # - elements should be consistent with each other [e.g. number of tuples in dummy_cols should equal number of columns in src_factor_cols]
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
+#==========================================================================================================================================================
 
 check_par_list <- function(obj, par_list)
 {

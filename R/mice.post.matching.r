@@ -287,9 +287,9 @@ mice.post.matching <- function(obj, cols = NULL, donors = 5L, weights_list = NUL
   # check whether match_vars are valid
   match_vars <- check_match_vars(obj, cols, match_vars)
 
-  # check whether input list of weights is valid
-  weights_list <- check_weights_list(weights_list, cols)
-
+  # check whether input list/vector of weights is valid and convert it to list format if necessary
+  weights_list <- check_weights_list(weights_list, cols, ncol(obj$data))
+  
   # check validity of other optional parameters
   optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , eps = eps, maxcor = maxcor)
   optionals <- check_optionals(optionals)
