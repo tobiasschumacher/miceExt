@@ -67,7 +67,7 @@ check_cols <- function(obj, cols)
     else
       stop("Argument cols contains tuple of invalid data type.\n")
 
-    # check whether there are NAs
+    # check whether we are in visit sequence
     if(!all(tuple %in% obj$visitSequence))
       stop("Argument 'cols' contains a tuple with a column index that is not in the visit sequence.\n")
 
@@ -79,11 +79,71 @@ check_cols <- function(obj, cols)
     {
       # now check whether in given column tuple, all rows are either exclusively NA or exclusively non-NA values
       target_matrix <- where[,tuple]
-      if(!all(apply(target_matrix,1, function (row) all(row) | all(!row))))
+      if(!all(apply(target_matrix, 1, function (row) all(row) | all(!row))))
         stop("Not all tuples in given columns are either blockwise NA or blockwise non-NA.\n")
     }
 
+    ## attach names and return
+    names(tuple) <- varnames[tuple]
     return(tuple)
+  }
+  
+  check_cols_vector_format <- function(groupvec)
+  {
+    
+    # check whether all group vector is actually finite
+    if(!is.numeric(groupvec))
+      stop("Argument 'cols' has to be numeric.\n")
+    
+    # check whether group vector has valid length
+    if(length(groupvec) != nvar)
+      stop("Argument 'cols' has invalid length.\n")
+    
+    # check whether all column numbers are finite and not NaN
+    if(!all(is.finite(groupvec) || groupvec >= 0))
+      stop("Argument 'cols' contains a tuple index that is negative, NaN or infinite.\n")
+    
+    # check whether column numbers are integral
+    if(!isTRUE(all.equal(groupvec,as.integer(groupvec))))
+      stop("Argument 'cols' contains a non-integral group number.\n")
+    
+    # check whether group numbers are valid
+    groupvec <- as.integer(groupvec)
+    n_groups <- max(groupvec)
+    if(n_groups < 1)
+      stop("Argument 'cols' must contain a positive group number.\n")
+    
+    if(!all(1L:max(groupvec) %in% groupvec))
+      stop("Argument 'cols' contains invalid group indices.\n")
+    
+    
+    cols <- lapply(1L:n_groups, 
+      function(j)
+      {
+        tuple <- which(groupvec == j)
+        
+        ## check whether we are in visit sequence
+        if(!all(tuple %in% obj$visitSequence))
+          stop("Argument 'cols' contains a tuple with a column index that is not in the visit sequence.\n")
+        
+        ## check whether all imputation methods are valid
+        if (!(all(obj$method[tuple] %in% c("pmm","norm","custom"))))
+          stop("Argument 'cols' contains a tuple with an invalid imputation method. The imputation method has to be either 'norm' or 'pmm'.\n")
+        
+        if(length(tuple) > 1)
+        {
+          # now check whether in given column tuple, all rows are either exclusively NA or exclusively non-NA values
+          target_matrix <- where[,tuple]
+          if(!all(apply(target_matrix, 1, function (row) all(row) | all(!row))))
+            stop("Not all tuples in given columns are either blockwise NA or blockwise non-NA.\n")
+        }
+        
+        ## attach names and return
+        names(tuple) <- varnames[tuple]
+        return(tuple)
+      })
+    
+    return(cols)
   }
 
   # initialize some helper variables
@@ -91,7 +151,7 @@ check_cols <- function(obj, cols)
   nvar <- ncol(obj$data)
   varnames <- dimnames(where)[[2]]
 
-  # if cols is null, look for columns with equal NAs
+  # if cols is null, look for columns with identical NA distributions
   if(is.null(cols))
   {
     cols <- find_cols(obj)
@@ -103,20 +163,24 @@ check_cols <- function(obj, cols)
 
 
   # main functionality of check.cols:
-  # if cols isn't a list, check whether it is a "valid" tuple
+  # if cols isn't a list, check whether it is either a valid group vector or a "valid" tuple
   # if cols is a list, check whether all its elements are valid tuples
-  # in any way, return a list of valid tuples of indexes, not column names
-  if(class(cols) != "list")
+  # in any way, return a list of valid tuples of indices, not column names
+  if(class(cols) != "list" && length(cols) < nvar)
     cols <- list(check_cols_tuple(cols))
+  else if(class(cols) != "list")
+      cols <- check_cols_vector_format(cols)
   else
   {
     # check every column tuple
     cols <- lapply(cols, check_cols_tuple)
-
+    
     # check whether there are duplicate columns among all tuples
     if(anyDuplicated(unlist(cols))>0)
       stop("Argument 'cols' contains duplicate columns among its elements.\n")
+    
   }
+  
 
   return(cols)
 }
@@ -255,6 +319,35 @@ check_match_vars <- function(obj, cols, match_vars)
 
   return(match_vars)
 }
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
+# check_match_vars
+# function dedicated to check whether input argument match_vars of mice.post.matching() is valid
+# -> each element of match_vars represents an extra column in the data that is matched against
+#
+# CHECK CRITERIA:
+# - match_vars should contain either integral numbers, representing column numbers, or characters for columns names, which should all appear in the data
+# - all columns should be either integers or factors to allow a safe split
+# - match_vars should be of the same length as cols, and no element of match_vars should be in the tuple of cols of the same index
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+check_bin_weights <- function(bin_weights, cnames)
+{
+  if(is.null(bin_weights))
+    return()
+  
+  if(!is.numeric(bin_weights))
+    stop("Input parameter bin_weights is not a numeric vector.\n")
+  
+  if(names(bin_weights) != cnames)
+    stop("Input parameter bin_weights doesn't fit to input data.\n")
+  
+  if(!all(bin_weights>0))
+    stop("Input parameter bin_weights contains non-positive values.\nGanz flott")
+}
+
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
