@@ -100,11 +100,11 @@
 #'@seealso \code{\link[miceExt]{mice.factorize}},
 #'  \code{\link[miceExt]{mice.post.matching}}, \code{\link[mice]{mice}}
 #'@export
-mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE, cols = NULL, pred_matrix = (1 - diag(1, ncol(data))))
+mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE, cols = NULL, col_tuples = NULL, col_weights = NULL, pred_matrix = (1 - diag(1, ncol(data))))
 {
   ## check whether input data is valid
 
-  #basic type checks
+  # basic type checks
   if (!(is.matrix(data) || is.data.frame(data)))
     stop("Data should be a matrix or data frame")
 
@@ -117,71 +117,22 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
 
 
   ## check optional parameters:
-
+  
+  # check whether input cols, col_tuples, col_weights and data work together, convert them into vector format if necessary
+  # and return set of factor columns to convert
+  setup <- check_tuples_weights_binarize(cols, col_tuples, col_weights, include_ordered, include_observed, data)
+  
   # check predictor matrix
   check_pred_matrix(pred_matrix,  ncol(data))
 
-  # if cols has been specified, check whether it is valid and then binarize these cols, ignoring other optionals -
-  # otherwise scan whole data frame and binarize w.r.t. other optionals
+    
 
-  if(!is.null(cols))
-  {
-    src_factor_cols <- check_cols_binarize(cols, data)
-    n_factors <- length(src_factor_cols)
-    v_padded_column_counts <- rep(1, n_src_cols)
-    v_padded_column_counts[src_factor_cols] <- unlist(lapply(src_factor_cols, function(j) length(levels(data[,j]))))
-  }
-  else
-  {
-    # get number of columns in binarized data of each attribute, non-categorical, non-binary attributes stay at one column
-    v_padded_column_counts <- unlist(lapply(1:n_src_cols,
-      function(j)
-      {
-        col <- data[,j]
-        if(is.factor(col) && length(levels(col)) > 2 && (include_observed || !all(!is.na(col)) ))
-        {
-          if(!include_ordered)
-          {
-            if(!is.ordered(col))
-              return(length(levels(col)))
-            else
-              return(1)
-          }
-          else
-            return(length(levels(col)))
-        }
-        else
-          return(1)
-      }))
-
-    # read out factor cols that are to be binarized
-    src_factor_cols <- which(v_padded_column_counts > 1)
-
-    # grab number of factors that have to be transformed
-    n_factors = length(src_factor_cols)
-
-    # check whether there actually is something to binarize and abort if not
-    if(n_factors == 0)
-    {
-      if(include_observed)
-      {
-        if(include_ordered)
-          stop("Data doesn't contain any non-binary categorical attributes.\n")
-        else
-          stop("Data doesn't contain any non-binary unordered categorical attributes.\n")
-      }
-      else
-      {
-        if(include_ordered)
-          stop("Data doesn't contain any non-binary categorical attributes with unobserved values.\n")
-        else
-          stop("Data doesn't contain any non-binary unordered categorical attributes with unobserved values.\n")
-      }
-
-    }
-  }
-
-
+  ## initialize main variables
+  src_factor_cols <- setup$src_factor_cols
+  n_factors = length(src_factor_cols)
+  v_padded_column_counts <- rep(1, n_src_cols)
+  v_padded_column_counts[src_factor_cols] <- unlist(lapply(src_factor_cols, function(j) nlevels(data[,j])))
+  
   # initialize result lists
   dummy_cols <- vector(mode = "list", length = n_factors)
   src_levels <- vector(mode = "list", length = n_factors)
@@ -194,11 +145,23 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
 
   # initialize result predictor matrix
   res_matrix <- matrix(NA, nrow = n_padmodel_cols, ncol = n_padmodel_cols)
+  
+  # initialize base and result column weights vector
+  base_tuples <- setup$col_tuples
+  if(is.null(base_tuples))
+    res_tuples <- NULL
+  else
+    res_tuples <- rep(0, n_padmodel_cols)
+  
+  # initialize base and result column weights vector
+  base_weights <- setup$col_weights
+  res_weights <- rep(1, n_padmodel_cols)
 
   # prepare iteration, initialize indices for padded data and result lists
   pad_index <- 1
   list_index <- 1
 
+  
   ##################################################################################################
   # MAIN ITERATION:
   # iterate over columns of source data, if column isn't a factor, copy it into padded data frame,
@@ -219,6 +182,12 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
 
       # update resulting predictive matrix
       res_matrix[,pad_index] <- inflate_vector(pred_matrix[,j], v_padded_column_counts)
+      
+      # update column tuples vector
+      res_tuples[pad_index] <- base_tuples[j]
+      
+      # update result weights vector
+      res_weights[pad_index] <- base_weights[j]
 
       # increment index of padded data
       pad_index <- pad_index + 1
@@ -249,6 +218,12 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
 
       # update resulting predictor matrix
       res_matrix[,curr_dummy_indices] <- inflate_vector(pred_matrix[,j], v_padded_column_counts)
+      
+      # update column tuples vector
+      res_tuples[curr_dummy_indices] <- base_tuples[j]
+      
+      # update column weights vector
+      res_weights[curr_dummy_indices] <- base_weights[j]/n_dummy_cols
 
       # increment indices
       pad_index <- pad_index + n_dummy_cols
@@ -256,14 +231,23 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
     }
   }
 
-  pad_names <- names(padded_data)  # name rows and columns of predictor matrix
+  # grab names of binarized data
+  pad_names <- names(padded_data)
+  
+  # name rows and columns of predictor matrix
   rownames(res_matrix) <- pad_names
   colnames(res_matrix) <- pad_names
+  
+  # if not NULL, name values of col_tuples vector
+  names(res_tuples) <- pad_names
+  
+  # name values of res_weights vector
+  names(res_weights) <- pad_names
 
   # encapsulate all information of factors from source data that is needed to retransform via mice.factorize in one list
   par_list <- list(src_data = data, n_src_cols = n_src_cols, n_pad_cols = ncol(padded_data), src_factor_cols = src_factor_cols, dummy_cols = dummy_cols, src_names = names(data), pad_names = pad_names, src_levels = src_levels)
 
   # return
-  return(list(data = padded_data, par_list = par_list, pred_matrix = res_matrix))
+  return(list(data = padded_data, par_list = par_list, pred_matrix = res_matrix, col_tuples = res_tuples, col_weights = res_weights))
 }
 
