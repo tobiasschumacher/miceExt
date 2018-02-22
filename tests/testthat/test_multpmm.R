@@ -21,20 +21,20 @@ mids_fail2 <- readRDS("mids_fail2.rds")
 post_nh1 <- mice.post.matching(mids_nh, distmetric = "euclidian")
 
 # apply match_vars and further parameters
-post_nh2 <- mice.post.matching(mids_nh, donors = 2L, distmetric = "manhattan", matchtype = 2L, eps = 0.0002, weights_list = c(1,5), match_vars = "age")
+post_nh2 <- mice.post.matching(mids_nh, donors = 2L, distmetric = "manhattan", matchtype = 2L, eps = 0.0002, weights = c(1,5), match_vars = "age")
 
 
 ## test input checks
 test_that("Test input checks",
           {
             expect_error(mice.post.matching(mammal_data), "Argument 'obj' should be of type mids.")
-            expect_error(mice.post.matching(mids_mammal, cols = "gt"), "Argument 'cols' contains a tuple of length 1 with imputation method 'pmm'.")
-            expect_error(mice.post.matching(mids_mammal, cols = "ct"), "Argument 'cols' contains a tuple with invalid column names.")
-            expect_error(mice.post.matching(mids_mammal, cols = c("sws","gt")), "Not all tuples in given columns are either blockwise NA or blockwise non-NA.")
-            expect_error(mice.post.matching(mids_mammal, cols = c(10,20)), "Argument 'cols' contains a tuple with out-of-bounds column numbers.")
-            expect_error(mice.post.matching(mids_mammal, cols = list(c("sws","ps"), c("sws","ps"))), "Argument 'cols' contains duplicate columns among its elements.")
+            expect_error(mice.post.matching(mids_mammal, blocks = "gt"), "Argument 'blocks' contains a tuple of length 1 with imputation method 'pmm'.")
+            expect_error(mice.post.matching(mids_mammal, blocks = "ct"), "Argument 'blocks' contains a tuple with invalid column names.")
+            expect_error(mice.post.matching(mids_mammal, blocks = c("sws","gt")), "Not all tuples in given columns are either blockwise NA or blockwise non-NA.")
+            expect_error(mice.post.matching(mids_mammal, blocks = c(10,20)), "Argument 'blocks' contains a tuple with out-of-bounds column numbers.")
+            expect_error(mice.post.matching(mids_mammal, blocks = list(c("sws","ps"), c("sws","ps"))), "Argument 'blocks' contains duplicate columns among its elements.")
             expect_error(mice.post.matching(mids_fail1), "There are no column tuples with identical missing data patterns and valid imputation methods.")
-            expect_error(mice.post.matching(mids_fail2, cols = c("sws","ps"), match_vars = "pi"), "Column tuple*")
+            expect_error(mice.post.matching(mids_fail2, blocks = c("sws","ps"), match_vars = "pi"), "Column tuple*")
           })
 
 

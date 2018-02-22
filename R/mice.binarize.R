@@ -100,7 +100,7 @@
 #'@seealso \code{\link[miceExt]{mice.factorize}},
 #'  \code{\link[miceExt]{mice.post.matching}}, \code{\link[mice]{mice}}
 #'@export
-mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE, cols = NULL, col_tuples = NULL, col_weights = NULL, pred_matrix = (1 - diag(1, ncol(data))))
+mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE, cols = NULL, blocks = NULL, weights = NULL, pred_matrix = (1 - diag(1, ncol(data))))
 {
   ## check whether input data is valid
 
@@ -118,14 +118,13 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
 
   ## check optional parameters:
   
-  # check whether input cols, col_tuples, col_weights and data work together, convert them into vector format if necessary
+  # check whether input cols, blocks, weights and data work together, convert them into vector format if necessary
   # and return set of factor columns to convert
-  setup <- check_tuples_weights_binarize(cols, col_tuples, col_weights, include_ordered, include_observed, data)
+  setup <- check_tuples_weights_binarize(cols, blocks, weights, include_ordered, include_observed, data)
   
   # check predictor matrix
   check_pred_matrix(pred_matrix,  ncol(data))
 
-    
 
   ## initialize main variables
   src_factor_cols <- setup$src_factor_cols
@@ -147,14 +146,14 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
   res_matrix <- matrix(NA, nrow = n_padmodel_cols, ncol = n_padmodel_cols)
   
   # initialize base and result column weights vector
-  base_tuples <- setup$col_tuples
+  base_tuples <- setup$blocks
   if(is.null(base_tuples))
-    res_tuples <- NULL
+    res_blocks <- NULL
   else
-    res_tuples <- rep(0, n_padmodel_cols)
+    res_blocks <- rep(0, n_padmodel_cols)
   
   # initialize base and result column weights vector
-  base_weights <- setup$col_weights
+  base_weights <- setup$weights
   res_weights <- rep(1, n_padmodel_cols)
 
   # prepare iteration, initialize indices for padded data and result lists
@@ -184,7 +183,7 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
       res_matrix[,pad_index] <- inflate_vector(pred_matrix[,j], v_padded_column_counts)
       
       # update column tuples vector
-      res_tuples[pad_index] <- base_tuples[j]
+      res_blocks[pad_index] <- base_tuples[j]
       
       # update result weights vector
       res_weights[pad_index] <- base_weights[j]
@@ -220,7 +219,7 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
       res_matrix[,curr_dummy_indices] <- inflate_vector(pred_matrix[,j], v_padded_column_counts)
       
       # update column tuples vector
-      res_tuples[curr_dummy_indices] <- base_tuples[j]
+      res_blocks[curr_dummy_indices] <- base_tuples[j]
       
       # update column weights vector
       res_weights[curr_dummy_indices] <- base_weights[j]/n_dummy_cols
@@ -238,8 +237,9 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
   rownames(res_matrix) <- pad_names
   colnames(res_matrix) <- pad_names
   
-  # if not NULL, name values of col_tuples vector
-  names(res_tuples) <- pad_names
+  # if not NULL, name values of blocks vector
+  if(!is.null(res_blocks))
+    names(res_blocks) <- pad_names
   
   # name values of res_weights vector
   names(res_weights) <- pad_names
@@ -248,6 +248,6 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
   par_list <- list(src_data = data, n_src_cols = n_src_cols, n_pad_cols = ncol(padded_data), src_factor_cols = src_factor_cols, dummy_cols = dummy_cols, src_names = names(data), pad_names = pad_names, src_levels = src_levels)
 
   # return
-  return(list(data = padded_data, par_list = par_list, pred_matrix = res_matrix, col_tuples = res_tuples, col_weights = res_weights))
+  return(list(data = padded_data, par_list = par_list, pred_matrix = res_matrix, blocks = res_blocks, weights = res_weights))
 }
 

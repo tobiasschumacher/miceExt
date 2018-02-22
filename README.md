@@ -45,11 +45,11 @@ tuples (`ps`,`sws`) and (`mls`,`gt`). We want to post-process the imputations ga
 `mice()` on this data by performing multivariate PMM on these tuples. This procedure works in two simple
 steps:
 
-1. Run mice on data set `mammal_data` and obtain a mids object to post-process:  
+1. Run `mice()` on data set `mammal_data` and obtain a mids object to post-process:  
 	 `mids_mammal <- mice(mammal_data)`
 
 
-2. Run `mice.post.matching`. As column argument `cols` has not been specified, it will
+2. Run `mice.post.matching()`. As column argument `blocks` has not been specified, it will
    automatically detect the column tuples with identical missing data patterns and then 
    impute on these:  
 	 `post_mammal <- mice.post.matching(mids_mammal)`

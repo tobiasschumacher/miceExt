@@ -7,7 +7,7 @@
 #'@param obj \code{mice::mids} object that has been returned by a previous run
 #'  of \code{mice()} or \code{mice.mids()} and whose imputations we want to
 #'  post-process.
-#'@param cols Column tuple or list of column tuples that multivariate PMM has to
+#'@param blocks Column tuple or list of column tuples that multivariate PMM has to
 #'  be performed on. Each column tuple has to be represented by an atomic vector
 #'  that can contain column names as character strings or column indices in
 #'  numerical format. The column list must not contain any duplicates, and each
@@ -17,21 +17,21 @@
 #'  Univariate tuples are also allowed if they have been imputed on via
 #'  \code{mice.impute.norm()}, or if we want to match them against on observed
 #'  variable as specified in parameter \code{match_vars}. \cr
-#'  The default is \code{cols = NULL}, in which case this function automatically
+#'  The default is \code{blocks = NULL}, in which case this function automatically
 #'  looks for tuples that have identical missing value patterns and imputes on
 #'  those.
 #'@param donors Integer indicating the size of the donor pool among which a draw
 #'  in the matching step is made. The default is \code{donors = 5L}. Setting
 #'  \code{donors = 1L} always selects the closest match (nearest neighbor), but
 #'  is not recommended.
-#'@param weights_list List of numeric vectors that allocates weights to the
-#'  elements in each tuple in cols, giving us the possibility to punish or
+#'@param weights List of numeric vectors that allocates weights to the
+#'  elements in each tuple in blocks, giving us the possibility to punish or
 #'  mitigate differences in certain columns of the data when computing the
 #'  distances in the matching step to determine the donor pool. Hence, this list
-#'  has to be the same length as cols, and each element has to be the same
+#'  has to be the same length as blocks, and each element has to be the same
 #'  length as the corresponding column tuple. If we do not want to apply weights
 #'  to a single tuple, we can write a single \code{0}, \code{1} or \code{NULL}
-#'  in the corresponding spot of the list. The default is \code{weights_list =
+#'  in the corresponding spot of the list. The default is \code{weights =
 #'  NULL}, meaning that no weights should be applied to any columns at all.
 #'@param distmetric Character string that determines which mathematical metric
 #'  we want to use to compute the distances between the multivariate
@@ -52,7 +52,7 @@
 #'@param match_vars Vector specifying for each tuple which additional variable
 #'  has to be matched against. Can be an integer or character vector, either
 #'  specifying column indices or column names. \code{match_vars} must be the
-#'  same length as \code{cols} with \code{0}-elements or \code{""}-elements to
+#'  same length as \code{blocks} with \code{0}-elements or \code{""}-elements to
 #'  disable this functionality for certain groups. Default is \code{match_vars =
 #'  NULL}, which completely disables this functionality.
 #'@param ridge The ridge penalty used in an internal call of
@@ -80,8 +80,8 @@
 #'               not affecting the \code{chainMean} or
 #'               \code{chainVar}-attributes, and hence, \code{plot()} will not
 #'               consider them either.}
-#'  \item{cols}{List of column tuples that multivariate imputation has been
-#'              performed on. It is equal to the input parameter \code{cols} if
+#'  \item{blocks}{List of column tuples that multivariate imputation has been
+#'              performed on. It is equal to the input parameter \code{blocks} if
 #'              it has been specified by the user, otherwise those column tuples
 #'              have been determined internally.}
 #'}
@@ -89,7 +89,7 @@
 #'@author Tobias Schumacher, Philipp Gaffert
 #'
 #'@details The algorithm basically iterates over the \code{m} imputations of the
-#'  input \code{mice::mids} object and each column tuple in \code{cols}, each
+#'  input \code{mice::mids} object and each column tuple in \code{blocks}, each
 #'  time following the following two main steps:
 #'\describe{
 #'  \item{Prediction}{First, we iterate over the columns of the current tuple,
@@ -157,13 +157,13 @@
 #'mids_mammal <- mice(mammal_data)
 #'
 #'
-#'# run function, as cols has not been specified, it will automatically detect
+#'# run function, as blocks has not been specified, it will automatically detect
 #'# the column tuples with identical missing data patterns and then impute on
 #'# these
 #'post_mammal <- mice.post.matching(mids_mammal)
 #'
 #'#read out which column tuples have been imputed on
-#'post_mammal$cols
+#'post_mammal$blocks
 #'
 #'#look into imputations within resulting mice::mids object
 #'post_mammal$midsobj$imp
@@ -182,7 +182,7 @@
 #'
 #'# run function, specify 'sws' as the column to impute on, and specify 'pi' as
 #'# the observed variable to consider in the matching.
-#'post_mammal <- mice.post.matching(mids_mammal, cols = "sws", match_vars = "pi")
+#'post_mammal <- mice.post.matching(mids_mammal, blocks = "sws", match_vars = "pi")
 #'
 #'
 #'#look into imputations within resulting mice::mids object
@@ -200,12 +200,12 @@
 #'# in boys_data, the columns 'hgt' and 'bmi' have the same NA-pattern,
 #'# and they have both been imputed on by PMM within mice()
 #'# hence, we can perform our post-processing on those columns:
-#'cols <- c("hgt","bmi")
+#'blocks <- c("hgt","bmi")
 #'
 #'
 #'# run post-processing, here with some non-default parameters:
 #'# -> a reduced donor pool of only 3 donors is chosen
-#'# -> weights_list: we want to punish bigger differnces in bmi within the
+#'# -> weights: we want to punish bigger differnces in bmi within the
 #'#    matching, so we apply weight of 3 to this column while leaving the
 #'#    other column as is
 #'# -> distmetric: within our matching process, we want to take the variances of
@@ -213,9 +213,9 @@
 #'#    variance. This is done by using the Mahalanobis-metric.
 #'
 #'post_boys <- mice.post.matching(mids_boys,
-#'                                cols = cols,
+#'                                blocks = blocks,
 #'                                donors = 3L,
-#'                                weights_list = c(1, 3),
+#'                                weights = c(1, 3),
 #'                                distmetric = "mahalanobis")
 #'
 #'
@@ -253,7 +253,7 @@
 #'#------------------------------------------------------------------------------
 #'
 #'# binarize
-#'boys_bin <- mice.binarize(boys_data, cols = c("gen", "phb"))
+#'boys_bin <- mice.binarize(boys_data, blocks = c("gen", "phb"))
 #'
 #'# run mice on binarized data
 #'mids_boys <- mice(boys_bin$data, predictorMatrix = boys_bin$pred_matrix)
@@ -263,8 +263,8 @@
 #'# be imputed as one big tuple, as this is how they are detected internally.
 #'# If we want to post-process the binary columns of 'gen' and 'phb' separately, we
 #'# can use the element 'dummy_cols' from 'boys_bin$par_list' which was generated
-#'# in the binarization, and feed it into the 'cols'-argument.
-#'post_boys <- mice.post.matching(mids_boys, cols = boys_bin$par_list$dummy_cols)
+#'# in the binarization, and feed it into the 'blocks'-argument.
+#'post_boys <- mice.post.matching(mids_boys, blocks = boys_bin$par_list$dummy_cols)
 #'
 #'# retransform to the original format
 #'res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
@@ -273,7 +273,7 @@
 #'
 #'@seealso \code{\link[mice]{mice}}, \code{\link[mice]{mids-class}}, \code{\link[miceExt]{mice.binarize}}, \code{\link[miceExt]{mice.factorize}}
 #'@export
-mice.post.matching <- function(obj, cols = NULL, donors = 5L, weights_list = NULL, distmetric = "residual", matchtype = 1L, match_vars = NULL, ridge = 1e-05, eps = 1e-04, maxcor = 0.99)
+mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, distmetric = "residual", matchtype = 1L, match_vars = NULL, ridge = 1e-05, eps = 1e-04, maxcor = 0.99)
 {
 
   ##  Check whether all input arguments are valid
@@ -282,13 +282,13 @@ mice.post.matching <- function(obj, cols = NULL, donors = 5L, weights_list = NUL
   if (!is.mids(obj)) stop("Argument 'obj' should be of type mids.")
 
 	# check whether input set of column tuples is valid
-  cols <- check_cols(obj, cols)
+  blocks <- check_blocks(obj, blocks)
 
   # check whether match_vars are valid
-  match_vars <- check_match_vars(obj, cols, match_vars)
+  match_vars <- check_match_vars(obj, blocks, match_vars)
 
   # check whether input list/vector of weights is valid and convert it to list format if necessary
-  weights_list <- check_weights_list(weights_list, cols, ncol(obj$data))
+  weights <- check_weights(weights, blocks, ncol(obj$data))
   
   # check validity of other optional parameters
   optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , eps = eps, maxcor = maxcor)
@@ -314,8 +314,8 @@ mice.post.matching <- function(obj, cols = NULL, donors = 5L, weights_list = NUL
   where <- obj$where
   r <- !is.na(data)
 
-  # now perform a deep check on whether given cols and match_vars work on the given data, and retrieve return setup values
-  setup <- check_deep(obj, cols, match_vars)
+  # now perform a deep check on whether given blocks and match_vars work on the given data, and retrieve return setup values
+  setup <- check_deep(obj, blocks, match_vars)
 
   partitions_list <- setup$partitions_list
   complete_R <- setup$complete_R
@@ -352,11 +352,11 @@ mice.post.matching <- function(obj, cols = NULL, donors = 5L, weights_list = NUL
     }
 
     # iterate over all column tuples
-	  for(i in seq_along(cols))
+	  for(i in seq_along(blocks))
 	  {
 	    # grab current column tuple and correspoding weights
-	    tuple <- cols[[i]]
-	    dimweights <- weights_list[[i]]
+	    tuple <- blocks[[i]]
+	    dimweights <- weights[[i]]
 
 	    # if tuple is univariate, just perform standard PMM and skip to next tuple
 	    if(length(tuple) == 1)
@@ -460,5 +460,5 @@ mice.post.matching <- function(obj, cols = NULL, donors = 5L, weights_list = NUL
 
   oldClass(midsobj) <- "mids"
 
-  return(list(midsobj = midsobj, cols = cols))
+  return(list(midsobj = midsobj, blocks = blocks))
 }

@@ -7,18 +7,18 @@
 
 
 #==========================================================================================================================================================
-# check_cols
-# function dedicated to check whether input list of vector tuples [cols] in mice.post.matching() is valid
-# -> each element of cols represents a tuple of columns that are contextually intertwined
+# check_blocks
+# function dedicated to check whether input list of vector tuples [blocks] in mice.post.matching() is valid
+# -> each element of blocks represents a tuple of columns that are contextually intertwined
 #
 # CHECK CRITERIA:
-# - cols should be either a list of vectors or a single vector, vectors should contain either integral numbers, representing column numbers,
+# - blocks should be either a list of vectors or a single vector, vectors should contain either integral numbers, representing column numbers,
 #   or characters for column names,that actually appear in the data, with no duplicates among them
 # - as vectors are contextually intertwined, the row in the mids$where-matrix in those columns shouuld be identical
 # - imputation methods on those colum either have to be "pmm" or "norm" to guarantee matching in post-processing that is consistent with previous run of mice
 #==========================================================================================================================================================
 
-check_cols <- function(obj, cols)
+check_blocks <- function(obj, blocks)
 {
   #----------------------------------------------------------------------------------------------------------------
   # First define some helper functions
@@ -26,11 +26,11 @@ check_cols <- function(obj, cols)
   
   
   # helper function that checks whether a single tuple of column names or indices is valid and converts column names to their respective index values
-  check_cols_tuple <- function(tuple)
+  check_blocks_tuple <- function(tuple)
   {
     #input tuple needs to be atomic
     if(!is.atomic(tuple))
-      stop("Argument 'cols' contains non-atomic element.\n")
+      stop("Argument 'blocks' contains non-atomic element.\n")
 
     # now check whether input tuple contains valid values w.r.t. names/indices of given data
     #
@@ -40,10 +40,10 @@ check_cols <- function(obj, cols)
     {
       # input tuple shouldn't contain duplicates
       if(anyDuplicated(tuple) > 0)
-        stop("Argument 'cols' contains a tuple with duplicate column index.\n")
+        stop("Argument 'blocks' contains a tuple with duplicate column index.\n")
 
       if(!all(tuple %in% varnames))
-        stop("Argument 'cols' contains a tuple with invalid column names.\n")
+        stop("Argument 'blocks' contains a tuple with invalid column names.\n")
 
       # convert character vector to integer vector by mapping column names to their respective index
       tuple <- sapply(tuple, function(i) which(varnames==i), USE.NAMES = FALSE)
@@ -53,32 +53,32 @@ check_cols <- function(obj, cols)
     {
       # check whether all column numbers are finite and not NaN
       if(!all(is.finite(tuple)))
-        stop("Argument 'cols' contains a tuple with NaN or infinite column numbers.\n")
+        stop("Argument 'blocks' contains a tuple with NaN or infinite column numbers.\n")
 
       # check whether column numbers are integral
       if(!isTRUE(all.equal(tuple,as.integer(tuple))))
-        stop("Argument 'cols' contains a tuple with non-integral column numbers.\n")
+        stop("Argument 'blocks' contains a tuple with non-integral column numbers.\n")
 
       # check whether column numbers are valid
       tuple <- as.integer(tuple)
       if(!all(tuple <= nvar))
-        stop("Argument 'cols' contains a tuple with out-of-bounds column numbers.\n")
+        stop("Argument 'blocks' contains a tuple with out-of-bounds column numbers.\n")
 
       # input tuple shouldn't contain duplicates
       if(anyDuplicated(tuple) > 0)
-        stop("Argument 'cols' contains a tuple with duplicate column names.\n")
+        stop("Argument 'blocks' contains a tuple with duplicate column names.\n")
 
     }
     else
-      stop("Argument cols contains tuple of invalid data type.\n")
+      stop("Argument blocks contains tuple of invalid data type.\n")
 
     # check whether we are in visit sequence
     if(!all(tuple %in% obj$visitSequence))
-      stop("Argument 'cols' contains a tuple with a column index that is not in the visit sequence.\n")
+      stop("Argument 'blocks' contains a tuple with a column index that is not in the visit sequence.\n")
 
     ## check whether all imputation methods are valid
     if (!(all(obj$method[tuple] %in% c("pmm","norm","custom"))))
-      stop("Argument 'cols' contains a tuple with an invalid imputation method. The imputation method has to be either 'norm' or 'pmm'.\n")
+      stop("Argument 'blocks' contains a tuple with an invalid imputation method. The imputation method has to be either 'norm' or 'pmm'.\n")
 
     if(length(tuple) > 1)
     {
@@ -93,47 +93,47 @@ check_cols <- function(obj, cols)
     return(tuple)
   }
   
-  check_cols_vector_format <- function(groupvec)
+  check_blocks_vector_format <- function(groupvec)
   {
     
     # check whether all group vector is actually finite
     if(!is.numeric(groupvec))
-      stop("Argument 'cols' has to be numeric.\n")
+      stop("Argument 'blocks' has to be numeric.\n")
     
     # check whether group vector has valid length
     if(length(groupvec) != nvar)
-      stop("Argument 'cols' has invalid length.\n")
+      stop("Argument 'blocks' has invalid length.\n")
     
     # check whether all column numbers are finite and not NaN
     if(!all(is.finite(groupvec) || groupvec >= 0))
-      stop("Argument 'cols' contains a tuple index that is negative, NaN or infinite.\n")
+      stop("Argument 'blocks' contains a tuple index that is negative, NaN or infinite.\n")
     
     # check whether column numbers are integral
     if(!isTRUE(all.equal(groupvec,as.integer(groupvec))))
-      stop("Argument 'cols' contains a non-integral group number.\n")
+      stop("Argument 'blocks' contains a non-integral group number.\n")
     
     # check whether group numbers are valid
     groupvec <- as.integer(groupvec)
     n_groups <- max(groupvec)
     if(n_groups < 1)
-      stop("Argument 'cols' must contain a positive group number.\n")
+      stop("Argument 'blocks' must contain a positive group number.\n")
     
     if(!all(1L:max(groupvec) %in% groupvec))
-      stop("Argument 'cols' contains invalid group indices.\n")
+      stop("Argument 'blocks' contains invalid group indices.\n")
     
     
-    cols <- lapply(1L:n_groups, 
+    blocks <- lapply(1L:n_groups, 
       function(j)
       {
         tuple <- which(groupvec == j)
         
         ## check whether we are in visit sequence
         if(!all(tuple %in% obj$visitSequence))
-          stop("Argument 'cols' contains a tuple with a column index that is not in the visit sequence.\n")
+          stop("Argument 'blocks' contains a tuple with a column index that is not in the visit sequence.\n")
         
         ## check whether all imputation methods are valid
         if (!(all(obj$method[tuple] %in% c("pmm","norm","custom"))))
-          stop("Argument 'cols' contains a tuple with an invalid imputation method. The imputation method has to be either 'norm' or 'pmm'.\n")
+          stop("Argument 'blocks' contains a tuple with an invalid imputation method. The imputation method has to be either 'norm' or 'pmm'.\n")
         
         if(length(tuple) > 1)
         {
@@ -148,7 +148,7 @@ check_cols <- function(obj, cols)
         return(tuple)
       })
     
-    return(cols)
+    return(blocks)
   }
   
   
@@ -161,53 +161,53 @@ check_cols <- function(obj, cols)
   nvar <- ncol(obj$data)
   varnames <- dimnames(where)[[2]]
 
-  # if cols is null, look for columns with identical NA distributions
-  if(is.null(cols))
+  # if blocks is null, look for columns with identical NA distributions
+  if(is.null(blocks))
   {
-    cols <- find_cols(obj)
-    if(length(cols) == 0)
+    blocks <- find_blocks(obj)
+    if(length(blocks) == 0)
       stop("There are no column tuples with identical missing data patterns and valid imputation methods.\n")
 
-    return(cols)
+    return(blocks)
   }
 
 
-  # main functionality of check.cols:
-  # if cols isn't a list, check whether it is either a valid group vector or a "valid" tuple
-  # if cols is a list, check whether all its elements are valid tuples
+  # main functionality of check.blocks:
+  # if blocks isn't a list, check whether it is either a valid group vector or a "valid" tuple
+  # if blocks is a list, check whether all its elements are valid tuples
   # in any way, return a list of valid tuples of indices, not column names
-  if(class(cols) != "list" && length(cols) < nvar)
-    cols <- list(check_cols_tuple(cols))
-  else if(class(cols) != "list")
-    cols <- check_cols_vector_format(cols)
+  if(class(blocks) != "list" && length(blocks) < nvar)
+    blocks <- list(check_blocks_tuple(blocks))
+  else if(class(blocks) != "list")
+    blocks <- check_blocks_vector_format(blocks)
   else
   {
     # check every column tuple
-    cols <- lapply(cols, check_cols_tuple)
+    blocks <- lapply(blocks, check_blocks_tuple)
     
     # check whether there are duplicate columns among all tuples
-    if(anyDuplicated(unlist(cols)) > 0)
-      stop("Argument 'cols' contains duplicate columns among its elements.\n")
+    if(anyDuplicated(unlist(blocks)) > 0)
+      stop("Argument 'blocks' contains duplicate columns among its elements.\n")
   }
 
-  return(cols)
+  return(blocks)
 }
 
 
 
 #==========================================================================================================================================================
-# check_weights_list
-# function dedicated to check whether input list of dimension weights [weights_list] in mice.post.matching() is valid
-# -> each element of weights_list represents a tuple of weights that is related to column tuple of same index in cols
+# check_weights
+# function dedicated to check whether input list of dimension weights [weights] in mice.post.matching() is valid
+# -> each element of weights represents a tuple of weights that is related to column tuple of same index in blocks
 #
 # CHECK CRITERIA:
-# - weights_list should be either a list of vectors or a single vector, vectors should be of the same length as the column tuple of same index,
+# - weights should be either a list of vectors or a single vector, vectors should be of the same length as the column tuple of same index,
 #   containing only postitive numbers
 # - alternatively, an element of the list may be NULL, 0 or 1 which are substitute values that indicates that no weights are to be applied on current
-#   column tuple, or weights_list may be NULL to indicate that no weights should be applied at all
+#   column tuple, or weights may be NULL to indicate that no weights should be applied at all
 #==========================================================================================================================================================
 
-check_weights_list <- function(weights_list, cols, ncols)
+check_weights <- function(weights, blocks, nblocks)
 {
   
   #----------------------------------------------------------------------------------------------------------------
@@ -217,57 +217,57 @@ check_weights_list <- function(weights_list, cols, ncols)
   check_weights <- function(weights_index)
   {
     # get current element
-    weights <- weights_list[[weights_index]]
+    curr_weights <- weights[[weights_index]]
 
     # if current element is null, return
-    if(is.null(weights))
+    if(is.null(curr_weights))
       return(NULL)
 
-    # check whether weights are numeric
-    if(!is.numeric(weights))
-      stop("Argument 'weights_list' contains non-numeric element.\n")
+    # check whether curr_weights are numeric
+    if(!is.numeric(curr_weights))
+      stop("Argument 'weights' contains non-numeric element.\n")
 
     # check whteher current value is NULL-substitute and return NULL if so
-    if(length(weights) == 1 && weights %in% c(0,1))
+    if(length(curr_weights) == 1 && curr_weights %in% c(0,1))
       return(NULL)
 
-    # check whether weights vector has same length as corresponding column tuple
-    if(length(weights) != length(cols[[weights_index]]))
-      stop("Argument 'weights_list' contains weights tuple of invalid length.\n")
+    # check whether curr_weights vector has same length as corresponding column tuple
+    if(length(curr_weights) != length(blocks[[weights_index]]))
+      stop("Argument 'weights' contains curr_weights tuple of invalid length.\n")
 
-    # check whether weights are neither NaN nor infinite
-    if(!all(is.finite(weights)))
-      stop("Argument 'weights_list' contains a tuple with an element that is either NaN or infinite.\n")
+    # check whether curr_weights are neither NaN nor infinite
+    if(!all(is.finite(curr_weights)))
+      stop("Argument 'weights' contains a tuple with an element that is either NaN or infinite.\n")
 
-    # check whether all weights are positive
-    if(!all(weights > 0))
-      stop("Argument 'weights_list' contains a tuple with a non-positive element.\n")
+    # check whether all curr_weights are positive
+    if(!all(curr_weights > 0))
+      stop("Argument 'weights' contains a tuple with a non-positive element.\n")
 
-    return(weights)
+    return(curr_weights)
   }
   
   convert_weights_vec <- function(weights_vec)
   {
     # check whether weights are numeric
     if(!is.numeric(weights_vec))
-      stop("Argument 'weights_list' is not numerict.\n")
+      stop("Argument 'weights' is not numerict.\n")
     
     # check whether weights vector has correct length
-    if(length(weights_vec) > ncols)
+    if(length(weights_vec) > nblocks)
       stop("Input weights vector has too many elements.\n")
     
     # check whether weights are neither NaN nor infinite
     if(!all(is.finite(weights_vec)))
-      stop("Argument 'weights_list' contains an element that is either NaN or infinite.\n")
+      stop("Argument 'weights' contains an element that is either NaN or infinite.\n")
     
     # check whether all weights are positive
     if(!all(weights_vec > 0))
-      stop("Argument 'weights_list' contains a tuple with a non-positive element.\n")
+      stop("Argument 'weights' contains a tuple with a non-positive element.\n")
     
-    if(length(unique(weights_vec[unlist(cols)])) == 1)
+    if(length(unique(weights_vec[unlist(blocks)])) == 1)
       return(NULL)
     
-    weights_list <- lapply(cols, 
+    weights <- lapply(blocks, 
       function(tuple)
       {
         weights <- weights_vec[tuple]
@@ -277,7 +277,7 @@ check_weights_list <- function(weights_list, cols, ncols)
           return(weights)
       })
     
-    return(weights_list)
+    return(weights)
   }
 
   
@@ -286,31 +286,31 @@ check_weights_list <- function(weights_list, cols, ncols)
   #----------------------------------------------------------------------------------------------------------------
   
   # check for null, which would be valid
-  if(is.null(weights_list))
-    return(weights_list)
+  if(is.null(weights))
+    return(weights)
 
-  # if weights_list is atomic, make it a list
-  if(is.atomic(weights_list))
+  # if weights is atomic, make it a list
+  if(is.atomic(weights))
   {
-    if(length(weights_list) < ncols)
-      weights_list <- list(weights_list)
+    if(length(weights) < nblocks)
+      weights <- list(weights)
     else 
     {
-      weights_list <- convert_weights_vec(weights_list)
-      return(weights_list)
+      weights <- convert_weights_vec(weights)
+      return(weights)
     }
   }
     
 
-  # check whether weights_list is of type list
-  if(!is.list(weights_list))
-    stop("Argument 'weights_list' is not atomic or of type list.\n")
+  # check whether weights is of type list
+  if(!is.list(weights))
+    stop("Argument 'weights' is not atomic or of type list.\n")
 
-  # check whether weights list is of same length as cols
-  if(length(weights_list) != length(cols))
-    stop("The arguments 'weights_list' and 'cols' have different lengths.\n")
+  # check whether weights list is of same length as blocks
+  if(length(weights) != length(blocks))
+    stop("The arguments 'weights' and 'blocks' have different lengths.\n")
 
-  weights_list <- lapply(seq_along(weights_list), check_weights)
+  weights <- lapply(seq_along(weights), check_weights)
 
 }
 
@@ -324,10 +324,10 @@ check_weights_list <- function(weights_list, cols, ncols)
 # CHECK CRITERIA:
 # - match_vars should contain either integral numbers, representing column numbers, or characters for columns names, which should all appear in the data
 # - all columns should be either integers or factors to allow a safe split
-# - match_vars should be of the same length as cols, and no element of match_vars should be in the tuple of cols of the same index
+# - match_vars should be of the same length as blocks, and no element of match_vars should be in the tuple of blocks of the same index
 #==========================================================================================================================================================
 
-check_match_vars <- function(obj, cols, match_vars)
+check_match_vars <- function(obj, blocks, match_vars)
 {
   if(is.null(match_vars))
     return(NULL)
@@ -366,11 +366,11 @@ check_match_vars <- function(obj, cols, match_vars)
   else
     stop("Argument 'match_vars' is neither numeric nor a character vector.\n")
 
-  if(length(cols) != length(match_vars))
-    stop("Argument 'match_vars' has to be of the same length as argument 'cols'.\n")
+  if(length(blocks) != length(match_vars))
+    stop("Argument 'match_vars' has to be of the same length as argument 'blocks'.\n")
 
-  if(!all(!unlist(lapply(seq_along(match_vars), function(j) match_vars[j] %in% cols[[j]]))))
-    stop("Elements of argument 'match_vars' must not be contained in corresponding element of argument 'cols'.\n")
+  if(!all(!unlist(lapply(seq_along(match_vars), function(j) match_vars[j] %in% blocks[[j]]))))
+    stop("Elements of argument 'match_vars' must not be contained in corresponding element of argument 'blocks'.\n")
 
   if(!all(unlist(lapply(match_vars, function(j) j == 0 || is.factor(data[,j]) || is.integer(data[,j]) ))))
     stop("Columns specified in argument 'match_vars' must be either factors or integers.\n")
@@ -387,7 +387,7 @@ check_match_vars <- function(obj, cols, match_vars)
 
 #==========================================================================================================================================================
 # check_optionals
-# function dedicated to check whether all optional input arguments of mice.post.matching() next to cols and weights_list are valid
+# function dedicated to check whether all optional input arguments of mice.post.matching() next to blocks and weights are valid
 #
 # CHECK CRITERIA:
 # - argument "distmetric" should be a character string in "euclidian", "manhattan", "residual" and "mahalanobis"
@@ -503,7 +503,7 @@ check_optionals <- function(optionals)
 #==========================================================================================================================================================
 # check_deep
 #
-# Function dedicated to perform deeper checks on whether the arguments "cols" and "match_vars" of mice.post.matching() work with the input data/mids object,
+# Function dedicated to perform deeper checks on whether the arguments "blocks" and "match_vars" of mice.post.matching() work with the input data/mids object,
 # which also returns partitions of both missing and observed data based on match_vars
 #
 # More precisely, we need to check for two scenarios:
@@ -521,7 +521,7 @@ check_optionals <- function(optionals)
 #       a long time before an error is detected.
 #==========================================================================================================================================================
 
-check_deep <- function(obj, cols, match_vars)
+check_deep <- function(obj, blocks, match_vars)
 {
 
   data <- obj$data
@@ -549,10 +549,10 @@ check_deep <- function(obj, cols, match_vars)
   }
 
   # iterate over all column tuples
-  for(i in seq_along(cols))
+  for(i in seq_along(blocks))
   {
     # grab current column tuple and correspoding weights
-    tuple <- cols[[i]]
+    tuple <- blocks[[i]]
 
     # keep track of in which rows the predictor values are not complete, as we cannot use those in multivariate matching
     complete_ry <- !vector(mode="logical", length = nrows)
@@ -602,10 +602,10 @@ check_deep <- function(obj, cols, match_vars)
       # nothing to partition against
       # -> if input tuple has length 1, input method has to be "norm" cause otherwise there is nothing to do
       if(length(tuple) == 1 && obj$method[tuple] == "pmm")
-        stop("Argument 'cols' contains a tuple of length 1 with imputation method 'pmm' and no external column to match against.\n")
+        stop("Argument 'blocks' contains a tuple of length 1 with imputation method 'pmm' and no external column to match against.\n")
     }
 
-  } #end cols iteration
+  } #end blocks iteration
 
   return(list(partitions_list = partitions_list, complete_R = complete_R, complete_W = complete_W))
 }
@@ -613,7 +613,7 @@ check_deep <- function(obj, cols, match_vars)
 
 #==========================================================================================================================================================
 # check_tuples_weights_binarize
-# function dedicated to check whether input arguments cols, col_tuples, col_weights, include_ordered, include_observed
+# function dedicated to check whether input arguments cols, blocks, weights, include_ordered, include_observed
 # of mice.binarize() are valid. Also convert tules and weights into vector format if necessary and returns vector with 
 # indices of those facator columns that are to be binarized
 # -> cols represents a set of factor columns that have to be binarized
@@ -624,7 +624,7 @@ check_deep <- function(obj, cols, match_vars)
 # - there should be no duplicates
 #==========================================================================================================================================================
 
-check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include_ordered, include_observed, data)
+check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered, include_observed, data)
 {
   
   #----------------------------------------------------------------------------------------------------------------
@@ -633,11 +633,11 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
   
   
   # helper function that checks whether a single tuple of column names or indices is valid and converts column names to their respective index values
-  check_cols_tuple <- function(tuple)
+  check_tuple <- function(tuple)
   {
     #input tuple needs to be atomic
     if(!is.atomic(tuple))
-      stop("Argument 'col_tuples' contains non-atomic element.\n")
+      stop("Argument 'blocks' contains non-atomic element.\n")
     
     # now check whether input tuple contains valid values w.r.t. names/indices of given data
     #
@@ -692,7 +692,7 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
     return(tuple)
   }
   
-  check_cols_vector_format <- function(groupvec)
+  check_blocks_vector_format <- function(groupvec)
   {
     
     # check whether all group vector is actually finite
@@ -723,7 +723,7 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
     src_factor_cols <- unlist(lapply(1L:n_groups, 
       function(j)
       {
-        tuple <- which(col_tuples == j)
+        tuple <- which(blocks == j)
         if(length(tuple) > 1)
         {
           target_matrix <- is.na(data[,tuple])
@@ -745,40 +745,40 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
   check_weights <- function(weights_index)
   {
     # get current element
-    weights <- col_weights[[weights_index]]
+    curr_weights <- weights[[weights_index]]
     
     # if current element is null, return
-    if(is.null(weights))
-      return(rep(1L, length(weights)))
+    if(is.null(curr_weights))
+      return(rep(1L, length(curr_weights)))
     
-    # check whether weights are numeric
-    if(!is.numeric(weights))
-      stop("Argument 'weights_list' contains non-numeric element.\n")
+    # check whether curr_weights are numeric
+    if(!is.numeric(curr_weights))
+      stop("Argument 'weights' contains non-numeric element.\n")
     
     # check whteher current value is NULL-substitute and return NULL if so
-    if(length(weights) == 1 && weights %in% c(0,1))
-      return(rep(1L, length(weights)))
+    if(length(curr_weights) == 1 && curr_weights %in% c(0,1))
+      return(rep(1L, length(curr_weights)))
     
-    # check whether weights vector has same length as corresponding column tuple
-    if(length(weights) != length(col_tuples[[weights_index]]))
-      stop("Argument 'weights_list' contains weights tuple of invalid length.\n")
+    # check whether curr_weights vector has same length as corresponding column tuple
+    if(length(curr_weights) != length(blocks[[weights_index]]))
+      stop("Argument 'weights' contains curr_weights tuple of invalid length.\n")
     
-    # check whether weights are neither NaN nor infinite
-    if(!all(is.finite(weights)))
-      stop("Argument 'weights_list' contains a tuple with an element that is either NaN or infinite.\n")
+    # check whether curr_weights are neither NaN nor infinite
+    if(!all(is.finite(curr_weights)))
+      stop("Argument 'weights' contains a tuple with an element that is either NaN or infinite.\n")
     
-    # check whether all weights are positive
-    if(!all(weights > 0))
-      stop("Argument 'weights_list' contains a tuple with a non-positive element.\n")
+    # check whether all curr_weights are positive
+    if(!all(curr_weights > 0))
+      stop("Argument 'weights' contains a tuple with a non-positive element.\n")
     
-    return(weights)
+    return(curr_weights)
   }
   
   check_weights_vec <- function(weights_vec)
   {
     # check whether weights are numeric
     if(!is.numeric(weights_vec))
-      stop("Argument 'col_weights' is not numeric.\n")
+      stop("Argument 'weights' is not numeric.\n")
     
     # check whether weights vector has correct length
     if(length(weights_vec) > nvar)
@@ -786,11 +786,11 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
     
     # check whether weights are neither NaN nor infinite
     if(!all(is.finite(weights_vec)))
-      stop("Argument 'col_weights' contains an element that is either NaN or infinite.\n")
+      stop("Argument 'weights' contains an element that is either NaN or infinite.\n")
     
     # check whether all weights are positive
     if(!all(weights_vec > 0))
-      stop("Argument 'weights_list' contains a tuple with a non-positive element.\n")
+      stop("Argument 'weights' contains a tuple with a non-positive element.\n")
 
     return(weights_vec)
   }
@@ -804,35 +804,35 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
   varnames <- colnames(data)
   
   
-  if(!is.null(col_tuples))
+  if(!is.null(blocks))
   {
     # check column format first
     
-    if(class(col_tuples) != "list" && length(col_tuples) == nvar)
+    if(class(blocks) != "list" && length(blocks) == nvar)
     {
-      check_res <- check_cols_vector_format(col_tuples)
-      res_tuples <- check_res$groupvec
+      check_res <- check_blocks_vector_format(blocks)
+      res_blocks <- check_res$groupvec
       src_factor_cols <- check_res$src_factor_cols
     }
     else
     {
       
-      res_tuples <- rep(0, nvar)
+      res_blocks <- rep(0, nvar)
       factor_inds <- rep(FALSE, nvar)
-      if(class(col_tuples) != "list")
-        col_tuples <- list(col_tuples)
+      if(class(blocks) != "list")
+        blocks <- list(blocks)
       
-      for (i in seq_along(col_tuples))
+      for (i in seq_along(blocks))
       {
-        curr_tuple <- check_cols_tuple(col_tuples[[i]])
-        col_tuples[[i]] <- curr_tuple       ## need to overwrite this here for valid duplicate check at later stage
+        curr_tuple <- check_tuple(blocks[[i]])
+        blocks[[i]] <- curr_tuple       ## need to overwrite this here for valid duplicate check at later stage
         factor_inds[curr_tuple] <- unlist(lapply(curr_tuple, function(j) return(nlevels(data[,j]) > 2)))
-        res_tuples[curr_tuple] <- i
+        res_blocks[curr_tuple] <- i
       }
       
       # check whether there are duplicate columns among all tuples
-      if(anyDuplicated(unlist(col_tuples)) > 0)
-        stop("Argument 'col_tuples' contains duplicate columns among its elements.\n")
+      if(anyDuplicated(unlist(blocks)) > 0)
+        stop("Argument 'blocks' contains duplicate columns among its elements.\n")
       
       
       ## check whether there actually is a non-binary factor in given set of target columns
@@ -845,7 +845,7 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
   }
   else 
   {
-    res_tuples <- NULL
+    res_blocks <- NULL
     
     if(!is.null(cols))
     {
@@ -923,74 +923,74 @@ check_tuples_weights_binarize <- function(cols, col_tuples, col_weights, include
   }
   
   # check for null, which would be valid
-  if(is.null(col_weights))
+  if(is.null(weights))
     res_weights <- rep(1, nvar)
   else
   {
-    # if weights_list is atomic, make it a list
-    if(is.atomic(col_weights) && length(col_weights) == nvar)
+    # if weights is atomic, make it a list
+    if(is.atomic(weights) && length(weights) == nvar)
     {
-      res_weights <- check_weights_vec(col_weights)
+      res_weights <- check_weights_vec(weights)
     }
     else
     {
-      if(is.null(col_tuples))
-        stop("Input argument 'col_weights' must not be a list if no blocks have been specified.\n")
+      if(is.null(blocks))
+        stop("Input argument 'weights' must not be a list if no blocks have been specified.\n")
       
       # if weights are in atomic vector format but not of length ncol(data), we interoret it as single eement weights list
-      if(is.atomic(col_weights))
-        col_weights <- list(col_weights)
+      if(is.atomic(weights))
+        weights <- list(weights)
       
       # check whether all weights are valid
-      check_weights_vec(unlist(col_weights))
+      check_weights_vec(unlist(weights))
       
       
-      if(!is.list(col_tuples))
+      if(!is.list(blocks))
       {
         res_weights <- rep(1, nvar)
         
-        if(length(col_weights) != max(res_tuples))
+        if(length(weights) != max(res_blocks))
           stop("Length of input weights list does not match the number of blocks to impute on.\n")
         
-        for(j in seq_along(col_weights))
+        for(j in seq_along(weights))
         {
-          tuple <- which(col_tuples == j)
-          if(length(tuple) != length(col_weights[[j]]))
+          tuple <- which(blocks == j)
+          if(length(tuple) != length(weights[[j]]))
             stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
           
-          res_weights[tuple] <- col_weights[[j]]
+          res_weights[tuple] <- weights[[j]]
         }
       }
       else
       {
-        if(is.atomic(col_weights))
-          col_weights <- list(col_weights)
+        if(is.atomic(weights))
+          weights <- list(weights)
         
-        # check whether weights_list is of type list
-        if(!is.list(col_weights))
-          stop("Argument 'col_weights' is not atomic or of type list.\n")
+        # check whether weights is of type list
+        if(!is.list(weights))
+          stop("Argument 'weights' is not atomic or of type list.\n")
         
         # check whether weights list is of same length as cols
-        if(length(col_weights) != length(col_tuples))
-          stop("The arguments 'col_weights' and 'col_tuples' have different lengths.\n")
+        if(length(weights) != length(blocks))
+          stop("The arguments 'weights' and 'blocks' have different lengths.\n")
         
         res_weights <- rep(1, nvar)
         
-        for (j in seq_along(col_tuples))
+        for (j in seq_along(blocks))
         {
-          tuple <- col_tuples[[j]]
-          weights <- col_weights[[j]]
+          tuple <- blocks[[j]]
+          curr_weights <- weights[[j]]
           
-          if(length(tuple) != length(col_weights))
+          if(length(tuple) != length(curr_weights))
             stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
           
-          res_weights[tuple] <- weights
+          res_weights[tuple] <- curr_weights
         }
       }
     }    
   }
   
-  setup <- list(col_tuples = res_tuples, col_weights = res_weights, src_factor_cols = src_factor_cols)
+  setup <- list(blocks = res_blocks, weights = res_weights, src_factor_cols = src_factor_cols)
   return(setup)
 }
 
@@ -1165,6 +1165,6 @@ check_par_list <- function(obj, par_list)
               return (all(is.na(row)) || (all(row %in% c(0,1)) && sum(row) == 1))
             }))
     }))))
-    stop("Not every column tuple in given list of dummmy cols is in proper binarized format.\n")
+    stop("Not every column tuple in given list of dummmy columnss is in proper binarized format.\n")
 
 }
