@@ -1,4 +1,4 @@
-## miceExt: Extension Package to mice
+# miceExt: Extension Package to mice
 
 This package extends and builds on the mice package by adding a functionality to perform 
 multivariate predictive mean matching on imputed data as well as new functionalities to
@@ -37,7 +37,7 @@ categories, resulting in a proper imputation of the given categorical data.
 
 ## Examples
 
-# 1 Post-processing of imputated data by multivariate PMM
+### 1 Post-processing of imputated data by multivariate PMM
 
 In this example, we work on a modification of the  `mammalsleep` data set from mice, `mammal_data`,
 which is included in the miceExt-package and which has identical missing data patterns on the column
@@ -54,11 +54,11 @@ steps:
    impute on these:  
 	 `post_mammal <- mice.post.matching(mids_mammal)`
 
-Now we can look into the reulsting imputations via `post_mammal$midsobj$imp` or analyze the results via 
+Now we can look into the resulting imputations via `post_mammal$midsobj$imp` or analyze the results via 
 the `with()` function.
 
 
-# 2 Imputation of categorical data
+### 2 Imputation of categorical data
 
 In this example, we want to impute the categorical columns `gen` and `phb` in the data set `boys` that is
 included in the mice-package with the functionalities of the package. This works in three main steps:
