@@ -207,14 +207,14 @@ check_blocks <- function(obj, blocks)
 #   column tuple, or weights may be NULL to indicate that no weights should be applied at all
 #==========================================================================================================================================================
 
-check_weights <- function(weights, blocks, nblocks)
+check_weights <- function(weights, blocks, nvar)
 {
   
   #----------------------------------------------------------------------------------------------------------------
   # First define some helper functions
   #----------------------------------------------------------------------------------------------------------------
   
-  check_weights <- function(weights_index)
+  check_weights_tuple <- function(weights_index)
   {
     # get current element
     curr_weights <- weights[[weights_index]]
@@ -250,11 +250,7 @@ check_weights <- function(weights, blocks, nblocks)
   {
     # check whether weights are numeric
     if(!is.numeric(weights_vec))
-      stop("Argument 'weights' is not numerict.\n")
-    
-    # check whether weights vector has correct length
-    if(length(weights_vec) > nblocks)
-      stop("Input weights vector has too many elements.\n")
+      stop("Argument 'weights' is not numeric.\n")
     
     # check whether weights are neither NaN nor infinite
     if(!all(is.finite(weights_vec)))
@@ -290,28 +286,24 @@ check_weights <- function(weights, blocks, nblocks)
     return(weights)
 
   # if weights is atomic, make it a list
-  if(is.atomic(weights))
+  if(is.atomic(weights) && length(weights) == nvar)
+    weights <- convert_weights_vec(weights)
+  else
   {
-    if(length(weights) < nblocks)
+    if(is.atomic(weights))
       weights <- list(weights)
-    else 
-    {
-      weights <- convert_weights_vec(weights)
-      return(weights)
-    }
-  }
     
-
-  # check whether weights is of type list
-  if(!is.list(weights))
-    stop("Argument 'weights' is not atomic or of type list.\n")
-
-  # check whether weights list is of same length as blocks
-  if(length(weights) != length(blocks))
-    stop("The arguments 'weights' and 'blocks' have different lengths.\n")
-
-  weights <- lapply(seq_along(weights), check_weights)
-
+    # check whether weights is of type list
+    if(!is.list(weights))
+      stop("Argument 'weights' is not atomic or of type list.\n")
+    
+    # check whether weights list is of same length as blocks
+    if(length(weights) != length(blocks))
+      stop("The arguments 'weights' and 'blocks' have different lengths.\n")
+    
+    weights <- lapply(seq_along(weights), check_weights_tuple)
+  }
+  return(weights)
 }
 
 
@@ -489,7 +481,7 @@ check_optionals <- function(optionals)
 
 
   ## check eps
-  check_delta(optionals$eps, "eps")
+  check_delta(optionals$minvar, "minvar")
 
 
   ## check maxcor
@@ -697,28 +689,28 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     
     # check whether all group vector is actually finite
     if(!is.numeric(groupvec))
-      stop("Argument 'cols' has to be numeric.\n")
+      stop("Argument 'blocks' has to be numeric.\n")
     
     # check whether group vector has valid length
     if(length(groupvec) != nvar)
-      stop("Argument 'cols' has invalid length.\n")
+      stop("Argument 'blocks' has invalid length.\n")
     
     # check whether all column numbers are finite and not NaN
     if(!all(is.finite(groupvec) || groupvec >= 0))
-      stop("Argument 'cols' contains a tuple index that is negative, NaN or infinite.\n")
+      stop("Argument 'blocks' contains a tuple index that is negative, NaN or infinite.\n")
     
     # check whether column numbers are integral
     if(!isTRUE(all.equal(groupvec,as.integer(groupvec))))
-      stop("Argument 'cols' contains a non-integral group number.\n")
+      stop("Argument 'blocks' contains a non-integral group number.\n")
     
     # check whether group numbers are valid
     groupvec <- as.integer(groupvec)
     n_groups <- max(groupvec)
     if(n_groups < 1)
-      stop("Argument 'cols' must contain a positive group number.\n")
+      stop("Argument 'blocks' must contain a positive group number.\n")
     
     if(!all(1L:max(groupvec) %in% groupvec))
-      stop("Argument 'cols' contains invalid group indices.\n")
+      stop("Argument 'blocks' contains invalid group indices.\n")
     
     src_factor_cols <- unlist(lapply(1L:n_groups, 
       function(j)
@@ -728,7 +720,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
         {
           target_matrix <- is.na(data[,tuple])
           if(!all(apply(target_matrix, 1, function (row) all(row) | all(!row))))
-            warning("Not all tuples in given columns are either blockwise NA or blockwise non-NA.\n")
+            warning("Not all column tuples in given set of blocks are either blockwise NA or blockwise non-NA.\n")
         }
         
         factor_inds <- unlist(lapply(tuple, function(j) return(nlevels(data[,j]) > 2)))

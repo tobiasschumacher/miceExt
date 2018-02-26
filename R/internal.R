@@ -135,8 +135,8 @@ inflate_vector <- function(vec, by)
 # call_remove_lin_dep
 # hack to access right frame from lower environment in buried function call
 #-------------------------------------------------------------------------------------------------------------------------------
-call_remove_lin_dep <- function(x, y, ry, eps, maxcor)
+call_remove_lin_dep <- function(x, y, ry, minvar, maxcor)
 {
-  keep <- remove.lindep(x, y, ry, eps = eps, maxcor = maxcor)
+  keep <- remove.lindep(x, y, ry, eps = minvar, maxcor = maxcor)
   return(keep)
 }

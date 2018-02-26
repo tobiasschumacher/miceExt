@@ -291,7 +291,7 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
   weights <- check_weights(weights, blocks, ncol(obj$data))
   
   # check validity of other optional parameters
-  optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , eps = eps, maxcor = maxcor)
+  optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , minvar = minvar, maxcor = maxcor)
   optionals <- check_optionals(optionals)
 
   # extract possibly converted integral values
@@ -374,7 +374,7 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
 	      wy <- complete.cases(x) & where[, tuple]
 
 	      # remove linear dependent predictors
-	      keep <- call_remove_lin_dep(x, y, ry, eps = eps, maxcor = maxcor)
+	      keep <- call_remove_lin_dep(x, y, ry, minvar = minvar, maxcor = maxcor)
 	      x <- x[, keep, drop = FALSE]
 
 	      # grab current partition and split matching if necessary
@@ -404,7 +404,7 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
 	        wy <- complete.cases(x) & where[, j]
 
 	        # remove linear dependent predictors
-	        keep <- call_remove_lin_dep(x, y, ry, eps = eps, maxcor = maxcor)
+	        keep <- call_remove_lin_dep(x, y, ry, minvar = minvar, maxcor = maxcor)
 	        x <- x[, keep, drop = FALSE]
 
 	        # apply current imputation/regression method to obain y_hat
