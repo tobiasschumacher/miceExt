@@ -25,7 +25,7 @@ mids_fail2 <- readRDS("mids_fail2.rds")
 post_nh1 <- mice.post.matching(mids_nh, distmetric = "euclidian")
 
 # apply match_vars and further parameters
-post_nh2 <- mice.post.matching(mids_nh, donors = 2L, distmetric = "manhattan", matchtype = 2L, eps = 0.0002, weights = c(1,5), match_vars = "age")
+post_nh2 <- mice.post.matching(mids_nh, donors = 2L, distmetric = "manhattan", matchtype = 2L, minvar = 0.0002, weights = c(1,5), match_vars = "age")
 
 # apply blocks and weights using with vector notation
 post_nh3 <- mice.post.matching(mids_nh, blocks = c(0,1,1,0), weights = c(1,2,3,4), distmetric = "euclidian")
@@ -38,9 +38,9 @@ test_that("Test input checks",
             expect_error(mice.post.matching(mids_mammal, blocks = "gt"), "Argument 'blocks' contains a tuple of length 1 with imputation method 'pmm'.")
             expect_error(mice.post.matching(mids_mammal, blocks = "ct"), "Argument 'blocks' contains a tuple with invalid column names.")
             expect_error(mice.post.matching(mids_mammal, blocks = c("sws","gt")), "Not all tuples in given columns are either blockwise NA or blockwise non-NA.")
-            expect_error(mice.post.matching(mids_mammal, blocks = c(10,20)), "Argument 'blocks' contains a tuple with out-of-bounds column numbers.")
+            expect_error(mice.post.matching(mids_mammal, blocks = c(10,20)), "Argument 'blocks' contains a tuple with an out-of-bounds column index.")
             expect_error(mice.post.matching(mids_mammal, blocks = list(c("sws","ps"), c("sws","ps"))), "Argument 'blocks' contains duplicate columns among its elements.")
-            expect_error(mice.post.matching(mids_mammal, blocks = mammal_blocks_fail1), "Argument 'blocks' has invalid length.")
+            expect_error(mice.post.matching(mids_mammal, blocks = mammal_blocks_fail1), "Argument 'blocks' contains a tuple with an out-of-bounds column index.")
             expect_error(mice.post.matching(mids_mammal, blocks = mammal_blocks_fail2), "Argument 'blocks' contains a tuple with a column index that is not in the visit sequence.")
             expect_error(mice.post.matching(mids_fail1), "There are no column tuples with identical missing data patterns and valid imputation methods.")
             expect_error(mice.post.matching(mids_fail2, blocks = c("sws","ps"), match_vars = "pi"), "Column tuple*")

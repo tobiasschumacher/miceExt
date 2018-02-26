@@ -12,7 +12,7 @@
 # -> each element of blocks represents a tuple of columns that are contextually intertwined
 #
 # CHECK CRITERIA:
-# - blocks should be either a list of vectors or a single vector, vectors should contain either integral numbers, representing column numbers,
+# - blocks should be either a list of vectors or a single vector, vectors should contain either integral numbers, representing column index,
 #   or characters for column names,that actually appear in the data, with no duplicates among them
 # - as vectors are contextually intertwined, the row in the mids$where-matrix in those columns shouuld be identical
 # - imputation methods on those colum either have to be "pmm" or "norm" to guarantee matching in post-processing that is consistent with previous run of mice
@@ -40,7 +40,7 @@ check_blocks <- function(obj, blocks)
     {
       # input tuple shouldn't contain duplicates
       if(anyDuplicated(tuple) > 0)
-        stop("Argument 'blocks' contains a tuple with duplicate column index.\n")
+        stop("Argument 'blocks' contains a tuple with duplicate column names.\n")
 
       if(!all(tuple %in% varnames))
         stop("Argument 'blocks' contains a tuple with invalid column names.\n")
@@ -51,22 +51,22 @@ check_blocks <- function(obj, blocks)
     }
     else if(is.numeric(tuple))
     {
-      # check whether all column numbers are finite and not NaN
+      # check whether all column index are finite and not NaN
       if(!all(is.finite(tuple)))
-        stop("Argument 'blocks' contains a tuple with NaN or infinite column numbers.\n")
+        stop("Argument 'blocks' contains a tuple with NaN or infinite column index.\n")
 
-      # check whether column numbers are integral
+      # check whether column index are integral
       if(!isTRUE(all.equal(tuple,as.integer(tuple))))
-        stop("Argument 'blocks' contains a tuple with non-integral column numbers.\n")
+        stop("Argument 'blocks' contains a tuple with a non-integral column index.\n")
 
-      # check whether column numbers are valid
+      # check whether column indices are valid
       tuple <- as.integer(tuple)
-      if(!all(tuple <= nvar))
-        stop("Argument 'blocks' contains a tuple with out-of-bounds column numbers.\n")
+      if(!all((tuple <= nvar) & (tuple > 0L)))
+        stop("Argument 'blocks' contains a tuple with an out-of-bounds column index.\n")
 
       # input tuple shouldn't contain duplicates
       if(anyDuplicated(tuple) > 0)
-        stop("Argument 'blocks' contains a tuple with duplicate column names.\n")
+        stop("Argument 'blocks' contains a tuple with a duplicate column index.\n")
 
     }
     else
@@ -100,16 +100,12 @@ check_blocks <- function(obj, blocks)
     if(!is.numeric(groupvec))
       stop("Argument 'blocks' has to be numeric.\n")
     
-    # check whether group vector has valid length
-    if(length(groupvec) != nvar)
-      stop("Argument 'blocks' has invalid length.\n")
+    # check whether all column indices are finite and not NaN
+    if(!all(is.finite(groupvec) & (groupvec >= 0)))
+      stop("Argument 'blocks' contains a group number that is negative, NaN or infinite.\n")
     
-    # check whether all column numbers are finite and not NaN
-    if(!all(is.finite(groupvec) || groupvec >= 0))
-      stop("Argument 'blocks' contains a tuple index that is negative, NaN or infinite.\n")
-    
-    # check whether column numbers are integral
-    if(!isTRUE(all.equal(groupvec,as.integer(groupvec))))
+    # check whether groupn numbers are integral
+    if(!isTRUE(all.equal(unname(groupvec),as.integer(groupvec))))
       stop("Argument 'blocks' contains a non-integral group number.\n")
     
     # check whether group numbers are valid
@@ -176,12 +172,14 @@ check_blocks <- function(obj, blocks)
   # if blocks isn't a list, check whether it is either a valid group vector or a "valid" tuple
   # if blocks is a list, check whether all its elements are valid tuples
   # in any way, return a list of valid tuples of indices, not column names
-  if(class(blocks) != "list" && length(blocks) < nvar)
-    blocks <- list(check_blocks_tuple(blocks))
-  else if(class(blocks) != "list")
+  if(is.atomic(blocks) && length(blocks) == nvar)
     blocks <- check_blocks_vector_format(blocks)
   else
   {
+    # if blocks are atomic, put them into a list
+    if(is.atomic(blocks))
+      blocks <- list(blocks)
+    
     # check every column tuple
     blocks <- lapply(blocks, check_blocks_tuple)
     
@@ -314,7 +312,7 @@ check_weights <- function(weights, blocks, nvar)
 # -> each element of match_vars represents an extra column in the data that is matched against
 #
 # CHECK CRITERIA:
-# - match_vars should contain either integral numbers, representing column numbers, or characters for columns names, which should all appear in the data
+# - match_vars should contain either integral numbers, representing column indices, or characters for columns names, which should all appear in the data
 # - all columns should be either integers or factors to allow a safe split
 # - match_vars should be of the same length as blocks, and no element of match_vars should be in the tuple of blocks of the same index
 #==========================================================================================================================================================
@@ -338,16 +336,16 @@ check_match_vars <- function(obj, blocks, match_vars)
                          function(i)
                          {
                            if(i != "")
-                             which(colnames(data)==i)
+                             return(which(colnames(data)==i))
                            else
-                             0L
+                             return(0L)
                          }, USE.NAMES = FALSE))
   }
   else if(is.numeric(match_vars))
   {
     match_vars[is.null(match_vars)] <- 0
 
-    # check whether column numbers are valid
+    # check whether all column indices are valid
     if(!all(match_vars %in% 1:ncol(data) | match_vars == 0))
       stop("Argument 'match_vars' contains an invalid column index.\n")
 
@@ -650,18 +648,18 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     }
     else if(is.numeric(tuple))
     {
-      # check whether all column numbers are finite and not NaN
+      # check whether all column indices are finite and not NaN
       if(!all(is.finite(tuple)))
-        stop("Argument 'cols' contains a tuple with NaN or infinite column numbers.\n")
+        stop("Argument 'cols' contains a tuple with a NaN or infinite column index.\n")
       
-      # check whether column numbers are integral
+      # check whether column indices are integral
       if(!isTRUE(all.equal(tuple,as.integer(tuple))))
-        stop("Argument 'cols' contains a tuple with non-integral column numbers.\n")
+        stop("Argument 'cols' contains a tuple with a non-integral column index.\n")
       
-      # check whether column numbers are valid
+      # check whether column indices are valid
       tuple <- as.integer(tuple)
-      if(!all(tuple <= nvar && tuple > 0))
-        stop("Argument 'cols' contains a tuple with out-of-bounds column numbers.\n")
+      if(!all((tuple <= nvar) & (tuple > 0)))
+        stop("Argument 'cols' contains a tuple with an out-of-bounds column index.\n")
       
       # input tuple shouldn't contain duplicates
       if(anyDuplicated(tuple) > 0)
@@ -695,11 +693,11 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     if(length(groupvec) != nvar)
       stop("Argument 'blocks' has invalid length.\n")
     
-    # check whether all column numbers are finite and not NaN
-    if(!all(is.finite(groupvec) || groupvec >= 0))
+    # check whether all column index are finite and not NaN
+    if(!all(is.finite(groupvec) & groupvec >= 0))
       stop("Argument 'blocks' contains a tuple index that is negative, NaN or infinite.\n")
     
-    # check whether column numbers are integral
+    # check whether column index are integral
     if(!isTRUE(all.equal(groupvec,as.integer(groupvec))))
       stop("Argument 'blocks' contains a non-integral group number.\n")
     
@@ -800,7 +798,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
   {
     # check column format first
     
-    if(class(blocks) != "list" && length(blocks) == nvar)
+    if(!is.list(blocks) && length(blocks) == nvar)
     {
       check_res <- check_blocks_vector_format(blocks)
       res_blocks <- check_res$groupvec
@@ -859,7 +857,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
       }
       else if(is.numeric(cols))
       {
-        # check whether column numbers are valid
+        # check whether column index are valid
         if(!all(cols %in% 1:ncol(data)))
           stop("Argument 'cols' contains an invalid column index.\n")
         
