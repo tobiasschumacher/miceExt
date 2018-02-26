@@ -164,7 +164,7 @@ check_blocks <- function(obj, blocks)
     if(length(blocks) == 0)
       stop("There are no column tuples with identical missing data patterns and valid imputation methods.\n")
 
-    return(blocks)
+    return(list(blocks = blocks, b_list_format = FALSE))
   }
 
 
@@ -173,7 +173,10 @@ check_blocks <- function(obj, blocks)
   # if blocks is a list, check whether all its elements are valid tuples
   # in any way, return a list of valid tuples of indices, not column names
   if(is.atomic(blocks) && length(blocks) == nvar)
+  {
     blocks <- check_blocks_vector_format(blocks)
+    b_list_format <- FALSE
+  }
   else
   {
     # if blocks are atomic, put them into a list
@@ -186,9 +189,12 @@ check_blocks <- function(obj, blocks)
     # check whether there are duplicate columns among all tuples
     if(anyDuplicated(unlist(blocks)) > 0)
       stop("Argument 'blocks' contains duplicate columns among its elements.\n")
+    
+    # set list format bool
+    b_list_format <- TRUE
   }
 
-  return(blocks)
+  return(list(blocks = blocks, b_list_format = b_list_format))
 }
 
 
@@ -205,7 +211,7 @@ check_blocks <- function(obj, blocks)
 #   column tuple, or weights may be NULL to indicate that no weights should be applied at all
 #==========================================================================================================================================================
 
-check_weights <- function(weights, blocks, nvar)
+check_weights <- function(weights, blocks, nvar, b_list_format)
 {
   
   #----------------------------------------------------------------------------------------------------------------
@@ -283,11 +289,15 @@ check_weights <- function(weights, blocks, nvar)
   if(is.null(weights))
     return(weights)
 
-  # if weights is atomic, make it a list
+  
   if(is.atomic(weights) && length(weights) == nvar)
     weights <- convert_weights_vec(weights)
   else
   {
+    if(!b_list_format)
+      stop("Input argument 'weights' must not be in list format if blocks haven't been specified in list format as well.")
+    
+    # if weights is atomic, make it a list
     if(is.atomic(weights))
       weights <- list(weights)
     

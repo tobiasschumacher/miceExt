@@ -282,13 +282,15 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
   if (!is.mids(obj)) stop("Argument 'obj' should be of type mids.")
 
 	# check whether input set of column tuples is valid
-  blocks <- check_blocks(obj, blocks)
-
+  check_tmp <- check_blocks(obj, blocks)
+  blocks <- check_tmp$blocks
+  b_list_format <- check_tmp$b_list_format
+  
   # check whether match_vars are valid
   match_vars <- check_match_vars(obj, blocks, match_vars)
 
   # check whether input list/vector of weights is valid and convert it to list format if necessary
-  weights <- check_weights(weights, blocks, ncol(obj$data))
+  weights <- check_weights(weights, blocks, ncol(obj$data), b_list_format)
   
   # check validity of other optional parameters
   optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , minvar = minvar, maxcor = maxcor)

@@ -25,7 +25,7 @@ mids_fail2 <- readRDS("mids_fail2.rds")
 post_nh1 <- mice.post.matching(mids_nh, distmetric = "euclidian")
 
 # apply match_vars and further parameters
-post_nh2 <- mice.post.matching(mids_nh, donors = 2L, distmetric = "manhattan", matchtype = 2L, minvar = 0.0002, weights = c(1,5), match_vars = "age")
+post_nh2 <- mice.post.matching(mids_nh, blocks = c("bmi","hyp"), donors = 2L, distmetric = "manhattan", matchtype = 2L, minvar = 0.0002, weights = c(1,5), match_vars = "age")
 
 # apply blocks and weights using with vector notation
 post_nh3 <- mice.post.matching(mids_nh, blocks = c(0,1,1,0), weights = c(1,2,3,4), distmetric = "euclidian")
