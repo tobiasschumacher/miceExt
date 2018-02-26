@@ -922,71 +922,56 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     }
   }
   
-  # check for null, which would be valid
+  
+  ### CHECK WEIGHTS HERE
+   
   if(is.null(weights))
     res_weights <- rep(1, nvar)
   else
   {
-    # if weights is atomic, make it a list
+    # if weights are in vvector format, delegate to vector format check
     if(is.atomic(weights) && length(weights) == nvar)
     {
       res_weights <- check_weights_vec(weights)
     }
     else
     {
-      if(is.null(blocks))
-        stop("Input argument 'weights' must not be a list if no blocks have been specified.\n")
-      
-      # if weights are in atomic vector format but not of length ncol(data), we interoret it as single eement weights list
+      # if weights are in atomic vector format but not of length ncol(data), we interpret it as single eement weights list
       if(is.atomic(weights))
         weights <- list(weights)
       
+      # weights in list format are only allowed, if blocks have been specified in list format as well 
+      if(is.null(blocks))
+        stop("Input argument 'weights' must not be in list format if no blocks have been specified.\n")
+      
+      # weights in list format are only allowed, if blocks have been specified in list format as well 
+      if(!is.list(blocks))
+        stop("Input argument 'weights' must not be in list format if blocks haven't been specified in list format as well.\n")
+
       # check whether all weights are valid
       check_weights_vec(unlist(weights))
       
+      # check whether weights is of type list
+      if(!is.list(weights))
+        stop("Argument 'weights' is not atomic or of type list.\n")
       
-      if(!is.list(blocks))
+      # check whether weights list is of same length as cols
+      if(length(weights) != length(blocks))
+        stop("The arguments 'weights' and 'blocks' have different lengths.\n")
+      
+      res_weights <- rep(1, nvar)
+      
+      for (j in seq_along(blocks))
       {
-        res_weights <- rep(1, nvar)
+        tuple <- blocks[[j]]
+        curr_weights <- weights[[j]]
         
-        if(length(weights) != max(res_blocks))
-          stop("Length of input weights list does not match the number of blocks to impute on.\n")
+        if(length(tuple) != length(curr_weights))
+          stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
         
-        for(j in seq_along(weights))
-        {
-          tuple <- which(blocks == j)
-          if(length(tuple) != length(weights[[j]]))
-            stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
-          
-          res_weights[tuple] <- weights[[j]]
-        }
+        res_weights[tuple] <- curr_weights
       }
-      else
-      {
-        if(is.atomic(weights))
-          weights <- list(weights)
-        
-        # check whether weights is of type list
-        if(!is.list(weights))
-          stop("Argument 'weights' is not atomic or of type list.\n")
-        
-        # check whether weights list is of same length as cols
-        if(length(weights) != length(blocks))
-          stop("The arguments 'weights' and 'blocks' have different lengths.\n")
-        
-        res_weights <- rep(1, nvar)
-        
-        for (j in seq_along(blocks))
-        {
-          tuple <- blocks[[j]]
-          curr_weights <- weights[[j]]
-          
-          if(length(tuple) != length(curr_weights))
-            stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
-          
-          res_weights[tuple] <- curr_weights
-        }
-      }
+      
     }    
   }
   

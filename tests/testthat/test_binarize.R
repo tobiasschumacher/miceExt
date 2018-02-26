@@ -11,10 +11,9 @@ boys_bin1 <- mice.binarize(boys_data)
 boys_bin2 <- mice.binarize(boys_data, include_observed = TRUE, pred_matrix = pred_matrix)
 boys_bin3 <- mice.binarize(boys_data, cols = "gen")
 boys_bin4 <- mice.binarize(boys_data, blocks = c("gen","phb"), weights = c(2,3))
-boys_bin5 <- mice.binarize(boys_data, blocks = boys_groups1, weights = c(2,3))
-boys_bin6 <- mice.binarize(boys_data, blocks = boys_groups2)
-boys_bin7 <- mice.binarize(boys_data, blocks = boys_groups1, weights = boys_weights)
-boys_bin8 <- mice.binarize(boys_data, weights = boys_weights)
+boys_bin5 <- mice.binarize(boys_data, blocks = boys_groups2)
+boys_bin6 <- mice.binarize(boys_data, blocks = boys_groups1, weights = boys_weights)
+boys_bin7 <- mice.binarize(boys_data, weights = boys_weights)
 
 
 ## test input checks
@@ -28,7 +27,7 @@ test_that("Test input checks",
             expect_error(mice.binarize(boys_data, include_ordered = FALSE), "Data doesn't contain any non-binary unordered categorical attributes with unobserved values.")
             expect_error(mice.binarize(boys_data, pred_matrix = diag(1,9)), "Diagonal elements of input predictor matrix have to be zero.")
             expect_error(mice.binarize(boys_data, weights = c(2,3)), "Input argument 'weights' must not be in list format if no blocks have been specified.")
-            expect_error(mice.binarize(boys_data, blocks = boys_groups, weights = c(2,3,4)), "Length of weights tuple 1 does not match length of column block 1..")
+            expect_error(mice.binarize(boys_data, blocks = boys_groups1, weights = c(2,3)), "Input argument 'weights' must not be in list format if blocks haven't been specified in list format as well.")
             expect_error(mice.binarize(boys_data, blocks = c(0,0,0,0,0,2,3,0,0)), "Argument 'blocks' contains invalid group indices.")
           })
 
@@ -43,5 +42,4 @@ test_that("Test functionality",
             expect_equal_to_reference(boys_bin5, file = "boys_bin5.rds")
             expect_equal_to_reference(boys_bin6, file = "boys_bin6.rds")
             expect_equal_to_reference(boys_bin7, file = "boys_bin7.rds")
-            expect_equal_to_reference(boys_bin8, file = "boys_bin8.rds")
           })
