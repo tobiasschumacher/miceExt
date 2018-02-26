@@ -1,6 +1,6 @@
 Package: miceExt
 Title: Extension Package to 'mice'
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: c( 
 	person("Tobias", "Schumacher", email = "tobias.schumacher1@rwth-aachen.de", role = c("aut", "cre")),
 	person("Philipp", "Gaffert", email = "philipp.gaffert@gfk.com", role = "aut"),
