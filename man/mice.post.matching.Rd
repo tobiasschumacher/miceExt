@@ -36,10 +36,12 @@ weights to the columns of each block, giving us the possibility to punish or
 mitigate differences in certain columns of the data when computing the
 distances in the matching step to determine the donor pool. Further details
 on the valid formats of this parameter can be found below in section
-\strong{\emph{input formats}}. Note that in order to avoid any ambiguities,
-specifying this parameter in list format is only allowed if blocks have been
-specified in list format as well. The default is \code{weights = NULL},
-meaning that no weights should be applied to any column at all.}
+\strong{\emph{input formats}}. \cr
+The default is \code{weights = NULL}, meaning that no weights should be
+applied to any column at all. \cr
+Note that in order to avoid any ambiguities, specifying this parameter in
+list format is only allowed if blocks have been specified in list format as
+well.}
 
 \item{distmetric}{Character string that determines which mathematical metric
 we want to use to compute the distances between the multivariate
@@ -262,7 +264,7 @@ Also offers a functionality to match imputations against observed variables.
 
 \examples{
 
-\dontrun{
+
 #------------------------------------------------------------------------------
 # Example on modified 'mammalsleep' data set from mice, that has identical
 # missing data patterns on the column tuples ('ps','sws') and ('mls','gt')
@@ -324,14 +326,19 @@ post_mammal <- mice.post.matching(obj = mids_mammal,
                                  blocks = list(c("sws","ps"), c("mls","gt")),
                                  weights = list(c(3,2), NULL))
 
+# or equivalently, using colums indices:                                  
+post_mammal <- mice.post.matching(obj = mids_mammal,
+                                 blocks = list(c(4,5), c(7,8)),
+                                 weights = list(c(3,2), NULL))
+
 # Second option: specify blocks and weights in vector format
 post_mammal <- mice.post.matching(obj = mids_mammal,
                                  blocks = c(0,0,0,1,1,0,2,2,0,0,0),
                                  weights = c(1,1,1,3,2,1,1,1,1,1,1))
 
-# Third option: specify blocks and weights in vector format
+# Third option: specify blocks in list format and weights in vector format
 post_mammal <- mice.post.matching(obj = mids_mammal,
-                                 blocks = c(0,0,0,1,1,0,2,2,0,0,0),
+                                 blocks = list(c("sws","ps"), c("mls","gt")),
                                  weights = c(1,1,1,3,2,1,1,1,1,1,1))
 
 # Fourth option: only specify weights in vector format. If the user knows
@@ -414,7 +421,7 @@ post_boys <- mice.post.matching(mids_boys,
 
 # Finally, we can retransform to the original format
 res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
-}
+
 
 }
 \references{

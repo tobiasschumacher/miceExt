@@ -28,10 +28,12 @@
 #'  mitigate differences in certain columns of the data when computing the
 #'  distances in the matching step to determine the donor pool. Further details
 #'  on the valid formats of this parameter can be found below in section
-#'  \strong{\emph{input formats}}. Note that in order to avoid any ambiguities,
-#'  specifying this parameter in list format is only allowed if blocks have been
-#'  specified in list format as well. The default is \code{weights = NULL},
-#'  meaning that no weights should be applied to any column at all.
+#'  \strong{\emph{input formats}}. \cr
+#'  The default is \code{weights = NULL}, meaning that no weights should be
+#'  applied to any column at all. \cr
+#'  Note that in order to avoid any ambiguities, specifying this parameter in
+#'  list format is only allowed if blocks have been specified in list format as
+#'  well.
 #'@param distmetric Character string that determines which mathematical metric
 #'  we want to use to compute the distances between the multivariate
 #'  \code{y_obs} and \code{y_mis}. Options are \code{"euclidian"},
@@ -68,17 +70,18 @@
 #'  building a linear model to compute the \code{y_hat}-values. The default is
 #'  \code{maxcor = 0.99}.
 #'  
+#'  
 #'@return List containing the following two elements:
 #'\describe{
 #'
-#'  \item{\code{\strong{midsobj}}}{\code{mice::mids} object that differs from the input object
+#'  \item{\strong{\code{midsobj}}}{\code{mice::mids} object that differs from the input object
 #'  only in the imputations that have been post-processed, and the \code{call}
 #'  and \code{loggedEvents} attributes that have been updated. In particular,
 #'  those post-processed imputations are not affecting the \code{chainMean} or
 #'  \code{chainVar}-attributes, and hence, \code{plot()} will not consider them
 #'  either.}
 #'  
-#'  \item{\code{\strong{blocks}}}{Set of column blocks in list format that multivariate
+#'  \item{\strong{\code{blocks}}}{Set of column blocks in list format that multivariate
 #'  imputation has been performed on. It is equivalent to the input parameter
 #'  \code{blocks} if it has been specified by the user, otherwise those column
 #'  tuples have been determined internally.}
@@ -100,7 +103,7 @@
 #'  
 #'  \describe{
 #'  
-#'    \item{\code{\strong{blocks}}}{
+#'    \item{\strong{\code{blocks}}}{
 #'    \strong{1. List Format} \cr
 #'    To specify the imputation \code{blocks} using the list format, a list of
 #'    atomic vectors has to be passed to the \code{blocks} parameter, and each
@@ -145,7 +148,7 @@
 #'    to \code{mice.post.matching()}.
 #'    }
 #'
-#'    \item{\code{\strong{weights}}}{
+#'    \item{\strong{\code{weights}}}{
 #'    \strong{1. List Format} \cr 
 #'    To specify the imputation \code{weights} using the list format, the
 #'    corresponding imputations blocks must have been specified in list format
@@ -314,14 +317,19 @@
 #'                                  blocks = list(c("sws","ps"), c("mls","gt")),
 #'                                  weights = list(c(3,2), NULL))
 #'
+#'# or equivalently, using colums indices:                                  
+#'post_mammal <- mice.post.matching(obj = mids_mammal,
+#'                                  blocks = list(c(4,5), c(7,8)),
+#'                                  weights = list(c(3,2), NULL))
+#'
 #'# Second option: specify blocks and weights in vector format
 #'post_mammal <- mice.post.matching(obj = mids_mammal,
 #'                                  blocks = c(0,0,0,1,1,0,2,2,0,0,0),
 #'                                  weights = c(1,1,1,3,2,1,1,1,1,1,1))
 #'
-#'# Third option: specify blocks and weights in vector format
+#'# Third option: specify blocks in list format and weights in vector format
 #'post_mammal <- mice.post.matching(obj = mids_mammal,
-#'                                  blocks = c(0,0,0,1,1,0,2,2,0,0,0),
+#'                                  blocks = list(c("sws","ps"), c("mls","gt")),
 #'                                  weights = c(1,1,1,3,2,1,1,1,1,1,1))
 #'
 #'# Fourth option: only specify weights in vector format. If the user knows
@@ -405,6 +413,7 @@
 #'# Finally, we can retransform to the original format
 #'res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
 #'}
+#'
 #'
 #'@seealso \code{\link[mice]{mice}}, \code{\link[mice]{mids-class}},
 #'  \code{\link[miceExt]{mice.binarize}}, \code{\link[miceExt]{mice.factorize}}
