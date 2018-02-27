@@ -15,46 +15,89 @@
 #'@param par_list List that has been returned in a previous call of
 #'  \code{mice::binarize()} next to the underlying data of the argument
 #'  \code{obj}.
+#'  
 #'@return A \code{mice::mids} object in which data and imputations have been
 #'  retransformed from their respective binarized versions in the input
 #'  \code{obj}. As this isn't a proper result of a mice iteration and many of
 #'  the attributes of \code{obj} cannot be transformed well, only the slots
 #'  \code{data}, \code{nmis}, \code{where} and \code{imp}, which are needed in
-#'  \code{with()} are not \code{NULL}. Hence, it does not work as input for
-#'  \code{mice.mids()}.
+#'  \code{with()}, are not \code{NULL}. In particular, it would not work as
+#'  input for \code{mice.mids()}.
 #'
 #'@author Tobias Schumacher, Philipp Gaffert
 #'
 #'@examples
 #'
-#'
 #'\dontrun{
 #'#------------------------------------------------------------------------------
-#'# this example illustrates the combined functionalities of mice.binarize,
-#'# mice.factorize and mice.post.matching on the dataset 'boys' from mice, which
-#'# yields different imputations on the factor columns 'gen', 'phb' and 'reg'
-#'# than mice() would output
+#'# Example that illustrates the combined functionalities of mice.binarize(),
+#'# mice.factorize() and mice.post.matching() on the data set 'boys_data', which
+#'# contains the column blocks ('hgt','bmi') and ('hc','gen','phb') that have
+#'# identical missing value patterns, and out of which the columns 'gen' and
+#'# 'phb' are factors. We are going to impute both tuples blockwise, while
+#'# binarizing the factor columns first. Note that we never need to specify any
+#'# blocks or columns to binarize, as these are all determined automatically 
 #'#------------------------------------------------------------------------------
 #'
-#'# binarize all factor columns in boys_data that contain NAs
-#'boys_bin <- mice.binarize(boys)
+#'# By default, mice.binarize() expands all factor columns that contain NAs,
+#'# so the columns 'gen' and 'phb' are automatically binarized
+#'boys_bin <- mice.binarize(boys_data)
 #'
-#'# run mice on binarized data, note that we need to use boys_bin$data to grab
+#'# Run mice on binarized data, note that we need to use boys_bin$data to grab
 #'# the actual binarized data and that we use the output predictor matrix
 #'# boys_bin$pred_matrix which is recommended for obtaining better imputation
 #'# models
 #'mids_boys <- mice(boys_bin$data, predictorMatrix = boys_bin$pred_matrix)
 #'
-#'# it is very likely that mice imputed multiple ones among one set of dummy
-#'# variables, so we need to post-process
-#'post_boys <- mice.post.matching(mids_boys, distmetric = "residual")
+#'# It is very likely that mice imputed multiple ones among one set of dummy
+#'# variables, so we need to post-process. As recommended, we also use the output
+#'# weights from mice.binarize(), which yield a more balanced weighting on the
+#'# column tuple ('hc','gen','phb') within the matching. As in previous examples,
+#'# both tuples are automatically discovered and imputed on
+#'post_boys <- mice.post.matching(mids_boys, weights = boys_bin$weights)
 #'
-#'# now we can safely retransform to the original data, with non-binarized imputations
+#'# Now we can safely retransform to the original data, with non-binarized
+#'# imputations
 #'res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
 #'
-#'# analyze the distribution of imputed variables, e.g. of the column 'gen',
+#'# Analyze the distribution of imputed variables, e.g. of the column 'gen',
 #'# using the mice version of with()
 #'with(res_boys, table(gen))
+#'
+#'
+#'
+#'#------------------------------------------------------------------------------
+#'# Similar example to the previous, that also works on 'boys_data' and
+#'# illustrates some more advanced funtionalities of all three functions in miceExt: 
+#'# This time we only want to post-process the column block ('gen','phb'), while
+#'# weighting the first of these tuples twice as much as the second. Within the
+#'# matching, we want to avoid matrix computations by using the euclidian distance
+#'# to determine the donor pool, and we want to draw from three donors only.
+#'#------------------------------------------------------------------------------
+#'
+#'# Binarize first, we specify blocks in list format with a single block, so we 
+#'# can omit an enclosing list. Similarly, we also specify weights in list format.
+#'# Both blocks and weights will be expanded and can be accessed from the output
+#'# to use them in mice.post.matching() later
+#'boys_bin <- mice.binarize(boys_data, 
+#'                          blocks = c("gen", "phb"), 
+#'                          weights = c(2,1))
+#'
+#'# Run mice on binarized data, again use the output predictor matrix from
+#'# mice.binarize()
+#'mids_boys <- mice(boys_bin$data, predictorMatrix = boys_bin$pred_matrix)
+#'
+#'# Post-process the binarized columns. We use blocks and weights from the previous
+#'# output, and set 'distmetric' and 'donors' as announced in the example
+#'# description
+#'post_boys <- mice.post.matching(mids_boys,
+#'                                blocks = boys_bin$blocks,
+#'                                weights = boys_bin$weights,
+#'                                distmetric = "euclidian",
+#'                                donors = 3L)
+#'
+#'# Finally, we can retransform to the original format
+#'res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
 #'}
 #'
 #'
