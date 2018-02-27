@@ -86,14 +86,14 @@ building a linear model to compute the \code{y_hat}-values. The default is
 List containing the following two elements:
 \describe{
 
- \item{\code{\strong{midsobj}}}{\code{mice::mids} object that differs from the input object
+ \item{\strong{\code{midsobj}}}{\code{mice::mids} object that differs from the input object
  only in the imputations that have been post-processed, and the \code{call}
  and \code{loggedEvents} attributes that have been updated. In particular,
  those post-processed imputations are not affecting the \code{chainMean} or
  \code{chainVar}-attributes, and hence, \code{plot()} will not consider them
  either.}
  
- \item{\code{\strong{blocks}}}{Set of column blocks in list format that multivariate
+ \item{\strong{\code{blocks}}}{Set of column blocks in list format that multivariate
  imputation has been performed on. It is equivalent to the input parameter
  \code{blocks} if it has been specified by the user, otherwise those column
  tuples have been determined internally.}
@@ -120,7 +120,7 @@ Also offers a functionality to match imputations against observed variables.
  
  \describe{
  
-   \item{\code{\strong{blocks}}}{
+   \item{\strong{\code{blocks}}}{
    \strong{1. List Format} \cr
    To specify the imputation \code{blocks} using the list format, a list of
    atomic vectors has to be passed to the \code{blocks} parameter, and each
@@ -165,7 +165,7 @@ Also offers a functionality to match imputations against observed variables.
    to \code{mice.post.matching()}.
    }
 
-   \item{\code{\strong{weights}}}{
+   \item{\strong{\code{weights}}}{
    \strong{1. List Format} \cr 
    To specify the imputation \code{weights} using the list format, the
    corresponding imputations blocks must have been specified in list format
