@@ -749,7 +749,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     
     # if current element is null, return
     if(is.null(curr_weights))
-      return(rep(1L, length(curr_weights)))
+      return(rep(1, length(blocks[[weights_index]])))
     
     # check whether curr_weights are numeric
     if(!is.numeric(curr_weights))
@@ -757,7 +757,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     
     # check whteher current value is NULL-substitute and return NULL if so
     if(length(curr_weights) == 1 && curr_weights %in% c(0,1))
-      return(rep(1L, length(curr_weights)))
+      return(rep(1, length(blocks[[weights_index]])))
     
     # check whether curr_weights vector has same length as corresponding column tuple
     if(length(curr_weights) != length(blocks[[weights_index]]))
@@ -929,7 +929,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
     res_weights <- rep(1, nvar)
   else
   {
-    # if weights are in vvector format, delegate to vector format check
+    # if weights are in vector format, delegate to vector format check
     if(is.atomic(weights) && length(weights) == nvar)
     {
       res_weights <- check_weights_vec(weights)
@@ -964,7 +964,7 @@ check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered
       for (j in seq_along(blocks))
       {
         tuple <- blocks[[j]]
-        curr_weights <- weights[[j]]
+        curr_weights <- check_weights(j)
         
         if(length(tuple) != length(curr_weights))
           stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
