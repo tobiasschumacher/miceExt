@@ -395,7 +395,7 @@ check_match_vars <- function(obj, blocks, match_vars)
 # - arguments eps, ridge, maxcor shoupld be numeric values bigger than zero
 #==========================================================================================================================================================
 
-check_optionals <- function(optionals)
+check_optionals <- function(optionals, nblocks)
 {
 
   #----------------------------------------------------------------------------------------------------------------
@@ -409,17 +409,32 @@ check_optionals <- function(optionals)
       stop(paste0("Argument '",argname,"' is not numeric.\n"))
 
     # check whether n is a single number
-    if(length(n) != 1)
-      stop(paste0("Argument '",argname,"' has to be a single number.\n"))
-
-    # check whether n is finite and not NaN
-    if(!is.finite(n))
-      stop(paste0("Argument '",argname,"' is either NaN or infinite.\n"))
-
-    # check whether n is integral
-    if(!isTRUE(all.equal(n,as.integer(n))))
-      stop(paste0("Argument '",argname,"' is not an integer.\n"))
-
+    if(length(n) == 1)
+    {
+      # check whether n is finite and not NaN
+      if(!is.finite(n))
+        stop(paste0("Argument '",argname,"' is either NaN or infinite.\n"))
+      
+      # check whether n is integral
+      if(!isTRUE(all.equal(n,as.integer(n))))
+        stop(paste0("Argument '",argname,"' is not an integer.\n"))
+      
+      n <- rep(n, nblocks)
+    }
+    else
+    {
+      if(length(n) != nblocks)
+        stop(paste0("Argument '",argname,"' has to be either a single number or a vector with as many elements as there are blocks.\n"))
+      
+      # check whether n is finite and not NaN
+      if(!is.finite(n))
+        stop(paste0("Argument '",argname,"' is either NaN or infinite.\n"))
+      
+      # check whether n is integral
+      if(!isTRUE(all.equal(n,as.integer(n))))
+        stop(paste0("Argument '",argname,"' is not an integer.\n"))
+    }
+    
     return(as.integer(n))
   }
 
@@ -429,17 +444,35 @@ check_optionals <- function(optionals)
     if(!is.numeric(delta))
       stop(paste0("Argument '",argname,"' is not numeric.\n"))
 
-    # check whether delta is a single number
-    if(length(delta) != 1)
-      stop(paste0("Argument '",argname,"' has to be a single number.\n"))
-
-    # check whether delta is finite and not NaN
-    if(!is.finite(delta))
-      stop(paste0("Argument '",argname,"' is either NaN or infinite.\n"))
-
-    # check whether delta is bigger than 0
-    if(delta <= 0)
-      stop(paste0("Argument '",argname,"' is smaller than 0.\n"))
+    # if delta is a single number, check whether it is valid and expand it
+    if(length(delta) == 1)
+    {
+      # check whether delta is finite and not NaN
+      if(!is.finite(delta))
+        stop(paste0("Argument '",argname,"' is either NaN or infinite.\n"))
+      
+      # check whether delta is bigger than 0
+      if(delta <= 0)
+        stop(paste0("Argument '",argname,"' is smaller than 0.\n"))
+      
+      delta <- rep(delta, nblocks)
+    }
+    else
+    {
+      # if delta is a vector, check whether is has correct length
+      if(length(delta) != nblocks)  
+        stop(paste0("Argument '",argname,"' has to be either a single number or a vector with as many elements as there are blocks.\n"))
+      
+      # check whether delta is finite and not NaN
+      if(any(!is.finite(delta)))
+        stop(paste0("Argument '",argname,"' contains an element that is either NaN or infinite.\n"))
+      
+      # check whether delta is greater than 0
+      if(any(delta <= 0))
+        stop(paste0("Argument '",argname,"' contains an element that is smaller than 0.\n"))
+    }
+    
+    return(delta)
   }
 
   
@@ -459,41 +492,53 @@ check_optionals <- function(optionals)
 
   ## check distmetric
 
-  # check whether distmetric is a character is numeric
+  # check whether distmetric is a character vector
   if(!is.character(optionals$distmetric))
     stop("Argument 'distmetric' is not a character string.\n")
 
   # check whether distmetric is a single character string
-  if(length(optionals$distmetric) != 1)
-    stop("Argument 'distmetric' has to be a one dimensional character vector.\n")
-
-  # check whether dstfunction is one of the four valid character strings
-  if(!(optionals$distmetric %in% c("manhattan", "euclidian", "mahalanobis", "residual")))
-    stop("Argument 'distmetric' is invalid. It has to be one of the following: \n \t 'manhattan', 'euclidian', 'mahalanobis', 'residual'.\n")
-
+  if(length(optionals$distmetric) == 1)
+  {
+    # check whether dstfunction is one of the four valid character strings
+    if(!(optionals$distmetric %in% c("manhattan", "euclidian", "mahalanobis", "residual")))
+      stop("Argument 'distmetric' is invalid. It has to be one of the following: \n \t 'manhattan', 'euclidian', 'mahalanobis', 'residual'.\n")
+    
+    optionals$distmetric <- rep(optionals$distmetric, nblocks)
+  }
+  else
+  {
+    if(length(optionals$distmetric) != nblocks)
+      stop("Argument 'distmetric' has to be a single character of a character vector with as many elements as there are blocks.\n")
+    
+    # check whether dstfunction is one of the four valid character strings
+    if(!all(optionals$distmetric %in% c("manhattan", "euclidian", "mahalanobis", "residual")))
+      stop("Argument 'distmetric' contains an invalid element. All metrics have to be one of the following: \n \t 'manhattan', 'euclidian', 'mahalanobis', 'residual'.\n")
+    
+  }
+  
 
   ## check matchtype
   optionals$matchtype <- check_integral(optionals$matchtype, "matchtype")
 
   # check whether matchtype is between 0 and 2
-  if(!(optionals$matchtype %in% c(0L,1L,2L)))
+  if(!all(optionals$matchtype %in% c(0L,1L,2L)))
     stop("Argument 'matchtype' is not an integer between 0 and 2.\n")
 
 
   ## check ridge
-  check_delta(optionals$ridge, "ridge")
+  optionals$ridge <- check_delta(optionals$ridge, "ridge")
 
   # check whether ridge is finite and not NaN
-  if(optionals$ridge > 1)
-    stop("Argument 'ridge' is bigger than 1).\n")
+  if(any(optionals$ridge) > 1)
+    stop("Argument 'ridge' contains an element is bigger than 1.\n")
 
 
-  ## check eps
-  check_delta(optionals$minvar, "minvar")
+  ## check minvar
+  optionals$minvar <- check_delta(optionals$minvar, "minvar")
 
 
   ## check maxcor
-  check_delta(optionals$maxcor ,"maxcor")
+  optionals$maxcor <- check_delta(optionals$maxcor ,"maxcor")
 
   return(optionals)
 }

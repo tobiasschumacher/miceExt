@@ -255,7 +255,7 @@
 #'
 #'@examples
 #'
-#'\dontrun{
+#'
 #'#------------------------------------------------------------------------------
 #'# Example on modified 'mammalsleep' data set from mice, that has identical
 #'# missing data patterns on the column tuples ('ps','sws') and ('mls','gt')
@@ -412,7 +412,7 @@
 #'
 #'# Finally, we can retransform to the original format
 #'res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
-#'}
+#'
 #'
 #'
 #'@seealso \code{\link[mice]{mice}}, \code{\link[mice]{mids-class}},
@@ -437,13 +437,9 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
   # check whether input list/vector of weights is valid and convert it to list format if necessary
   weights <- check_weights(weights, blocks, ncol(obj$data), b_list_format)
   
-  # check validity of other optional parameters
+  # check validity of other optional parameters and convert/expand them if necessary
   optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , minvar = minvar, maxcor = maxcor)
-  optionals <- check_optionals(optionals)
-
-  # extract possibly converted integral values
-  donors <- optionals$donors
-  matchtype <- optionals$matchtype
+  optionals <- check_optionals(optionals, length(blocks))
 
 
   ## Initialize base parameters
@@ -504,6 +500,14 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
 	    # grab current column tuple and correspoding weights
 	    tuple <- blocks[[i]]
 	    dimweights <- weights[[i]]
+	    
+	    # grab current values of optional parameters
+	    donors <- optionals$donors[[i]]
+	    distmetric <- optionals$distmetric[[i]]
+	    matchtype <- optionals$matchtype[[i]]
+	    ridge <- optionals$ridge[[i]]
+	    minvar <- optionals$minvar[[i]]
+	    maxcor <- optionals$maxcor[[i]]
 
 	    # if tuple is univariate, just perform standard PMM and skip to next tuple
 	    if(length(tuple) == 1)
