@@ -365,7 +365,7 @@ mice.binarize <- function(data, include_ordered = TRUE, include_observed = FALSE
   
   # check whether input cols, blocks, weights and data work together, convert them into vector format if necessary
   # and return set of factor columns to convert
-  setup <- check_tuples_weights_binarize(cols, blocks, weights, include_ordered, include_observed, data)
+  setup <- check_blocks_weights_binarize(cols, blocks, weights, include_ordered, include_observed, data)
   
   # check predictor matrix
   check_pred_matrix(pred_matrix,  ncol(data))

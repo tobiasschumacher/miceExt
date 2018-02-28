@@ -96,7 +96,7 @@ check_blocks <- function(obj, blocks)
   check_blocks_vector_format <- function(groupvec)
   {
     
-    # check whether all group vector is actually finite
+    # check whether all group numbers are actually finite
     if(!is.numeric(groupvec))
       stop("Argument 'blocks' has to be numeric.\n")
     
@@ -624,7 +624,7 @@ check_deep <- function(obj, blocks, match_vars)
 # - there should be no duplicates
 #==========================================================================================================================================================
 
-check_tuples_weights_binarize <- function(cols, blocks, weights, include_ordered, include_observed, data)
+check_blocks_weights_binarize <- function(cols, blocks, weights, include_ordered, include_observed, data)
 {
   
   #----------------------------------------------------------------------------------------------------------------
