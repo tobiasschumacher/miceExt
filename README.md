@@ -63,10 +63,10 @@ the `with()` function.
 In this example, we want to impute the categorical columns `gen` and `phb` in the data set `boys` that is
 included in the mice-package with the functionalities of the package. This works in three main steps:
 
-1. Binarize the factor columns in boys the we want to impute on:  
-	`boys_bin <- mice.binarize(boys, cols = c("gen", "phb"))`
+1. Binarize the factor columns in boys the we want to impute on. By default, `mice.binarize()` will identify all factor columns with missing values and automatically binarize them.  
+	`boys_bin <- mice.binarize(boys)`
 
-2. Run mice on binarized data, as it is very likely that mice imputed multiple ones among one set of dummy variables:  
+2. Run `mice()` on binarized data and post-process the result with `mice.post.matching()`, as it is very likely that `mice()` imputed multiple ones among one set of dummy variables:  
 	 ```
 	 # run mice, note that we need to grab `boys_bin$data` and also use `boys_bin$pred_matrix` as predictor matrix for mice() 
 	 # to obtain cleaner models
@@ -76,7 +76,7 @@ included in the mice-package with the functionalities of the package. This works
 	 post_boys <- mice.post.matching(mids_boys, weights = boys_bin$weights)
 	 ```
 
-3. Restransform the resulting imputations back into categorical format:  
+3. Retransform the resulting imputations back into categorical format:  
 	 `res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)`
 
 Also in this case, we can analyze the resulting imputed dataset via the `with()` function. If, e.g., we want to take
