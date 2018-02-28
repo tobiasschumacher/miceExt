@@ -37,7 +37,7 @@ categories, resulting in a proper imputation of the given categorical data.
 
 ## Examples
 
-### 1 Post-processing of imputated data by multivariate PMM
+### 1  Post-processing of imputated data by multivariate PMM
 
 In this example, we work on a modification of the  `mammalsleep` data set from mice, `mammal_data`,
 which is included in the miceExt-package and which has identical missing data patterns on the column
@@ -58,12 +58,12 @@ Now we can look into the resulting imputations via `post_mammal$midsobj$imp` or 
 the `with()` function.
 
 
-### 2 Imputation of categorical data
+### 2   Imputation of categorical data
 
 In this example, we want to impute the categorical columns `gen` and `phb` in the data set `boys` that is
 included in the mice-package with the functionalities of the package. This works in three main steps:
 
-1. Binarize the factor columns in boys the we want to impute on. By default, `mice.binarize()` will identify all factor columns with missing values and automatically binarize them.  
+1. Binarize the factor columns in boys the we want to impute on. By default, `mice.binarize()` will automatically identify all factor columns with missing values and binarize them.  
 	`boys_bin <- mice.binarize(boys)`
 
 2. Run `mice()` on binarized data and post-process the result with `mice.post.matching()`, as it is very likely that `mice()` imputed multiple ones among one set of dummy variables:  
