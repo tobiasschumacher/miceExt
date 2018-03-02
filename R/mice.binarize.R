@@ -82,7 +82,7 @@
 #'  element of this list would be "dummy_cols", which itself is a list of the
 #'  column tuples that correspond to the transformed factor column from the
 #'  original data set, and therefore works perfectly as input for
-#'  \code{mice.post.matching()} (cf. examples below).}
+#'  \code{mice.post.matching()}.}
 #'  
 #'  \item{\strong{\code{blocks}}}{If input parameter \code{blocks} has been
 #'  specified, an expanded version of that input is returned in vector format
