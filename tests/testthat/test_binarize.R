@@ -27,7 +27,7 @@ test_that("Test input checks",
             expect_error(mice.binarize(boys_data, include_ordered = FALSE), "Data doesn't contain any non-binary unordered categorical attributes with unobserved values.")
             expect_error(mice.binarize(boys_data, pred_matrix = diag(1,9)), "Diagonal elements of input predictor matrix have to be zero.")
             expect_error(mice.binarize(boys_data, weights = c(2,3)), "Input argument 'weights' must not be in list format if no blocks have been specified.")
-            expect_error(mice.binarize(boys_data, blocks = boys_groups1, weights = c(2,3)), "Input argument 'weights' must not be in list format if blocks haven't been specified in list format as well.")
+            expect_error(mice.binarize(boys_data, blocks = boys_groups1, weights = c(2,3,4)), "Length of weight tuple 1 does not match length of block 1.")
             expect_error(mice.binarize(boys_data, blocks = c(0,0,0,0,0,2,3,0,0)), "Argument 'blocks' contains invalid group indices.")
           })
 

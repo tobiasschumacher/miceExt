@@ -427,15 +427,25 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
   if (!is.mids(obj)) stop("Argument 'obj' should be of type mids.")
 
 	# check whether input set of column tuples is valid
-  check_tmp <- check_blocks(obj, blocks)
-  blocks <- check_tmp$blocks
-  b_list_format <- check_tmp$b_list_format
+  # if blocks is null, look for columns with identical NA distributions
+  if(is.null(blocks))
+  {
+    blocks <- find_blocks(obj)
+    if(length(blocks) == 0)
+      stop("There are no column tuples with identical missing data patterns and valid imputation methods.\n")
+    blocks_specified <- FALSE
+  }
+  else
+  {
+    blocks <- check_blocks(obj, blocks)
+    blocks_specified <- TRUE
+  }
   
   # check whether match_vars are valid
   match_vars <- check_match_vars(obj, blocks, match_vars)
 
   # check whether input list/vector of weights is valid and convert it to list format if necessary
-  weights <- check_weights(weights, blocks, ncol(obj$data), b_list_format)
+  weights <- check_weights(weights, blocks, ncol(obj$data), blocks_specified)
   
   # check validity of other optional parameters and convert/expand them if necessary
   optionals <- list(donors = donors, distmetric = distmetric, matchtype = matchtype, ridge = ridge , minvar = minvar, maxcor = maxcor)
@@ -451,7 +461,6 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
 
   # grab function call
   call <- match.call()
-
 
   # initialize more base parameters, e.g. make explicit local copies
   where <- obj$where

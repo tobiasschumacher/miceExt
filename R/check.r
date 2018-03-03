@@ -157,26 +157,13 @@ check_blocks <- function(obj, blocks)
   nvar <- ncol(obj$data)
   varnames <- dimnames(where)[[2]]
 
-  # if blocks is null, look for columns with identical NA distributions
-  if(is.null(blocks))
-  {
-    blocks <- find_blocks(obj)
-    if(length(blocks) == 0)
-      stop("There are no column tuples with identical missing data patterns and valid imputation methods.\n")
-
-    return(list(blocks = blocks, b_list_format = FALSE))
-  }
-
 
   # main functionality of check.blocks:
   # if blocks isn't a list, check whether it is either a valid group vector or a "valid" tuple
   # if blocks is a list, check whether all its elements are valid tuples
   # in any way, return a list of valid tuples of indices, not column names
   if(is.atomic(blocks) && length(blocks) == nvar)
-  {
     blocks <- check_blocks_vector_format(blocks)
-    b_list_format <- FALSE
-  }
   else
   {
     # if blocks are atomic, put them into a list
@@ -189,12 +176,8 @@ check_blocks <- function(obj, blocks)
     # check whether there are duplicate columns among all tuples
     if(anyDuplicated(unlist(blocks)) > 0)
       stop("Argument 'blocks' contains duplicate columns among its elements.\n")
-    
-    # set list format bool
-    b_list_format <- TRUE
   }
-
-  return(list(blocks = blocks, b_list_format = b_list_format))
+  return(blocks)
 }
 
 
@@ -211,7 +194,7 @@ check_blocks <- function(obj, blocks)
 #   column tuple, or weights may be NULL to indicate that no weights should be applied at all
 #==========================================================================================================================================================
 
-check_weights <- function(weights, blocks, nvar, b_list_format)
+check_weights <- function(weights, blocks, nvar, blocks_specified)
 {
   
   #----------------------------------------------------------------------------------------------------------------
@@ -294,8 +277,8 @@ check_weights <- function(weights, blocks, nvar, b_list_format)
     weights <- convert_weights_vec(weights)
   else
   {
-    if(!b_list_format)
-      stop("Input argument 'weights' must not be in list format if blocks haven't been specified in list format as well.")
+    if(!blocks_specified)
+      stop("Input argument 'weights' must not be in list format if blocks haven't been explicitly specified.")
     
     # if weights is atomic, make it a list
     if(is.atomic(weights))
@@ -529,7 +512,7 @@ check_optionals <- function(optionals, nblocks)
   optionals$ridge <- check_delta(optionals$ridge, "ridge")
 
   # check whether ridge is finite and not NaN
-  if(any(optionals$ridge) > 1)
+  if(any(optionals$ridge > 1))
     stop("Argument 'ridge' contains an element is bigger than 1.\n")
 
 
@@ -657,7 +640,7 @@ check_deep <- function(obj, blocks, match_vars)
 
 
 #==========================================================================================================================================================
-# check_tuples_weights_binarize
+# check_blocks_weights_binarize
 # function dedicated to check whether input arguments cols, blocks, weights, include_ordered, include_observed
 # of mice.binarize() are valid. Also convert tules and weights into vector format if necessary and returns vector with 
 # indices of those facator columns that are to be binarized
@@ -740,7 +723,7 @@ check_blocks_weights_binarize <- function(cols, blocks, weights, include_ordered
   check_blocks_vector_format <- function(groupvec)
   {
     
-    # check whether all group vector is actually finite
+    # check whether all group vector is numeric
     if(!is.numeric(groupvec))
       stop("Argument 'blocks' has to be numeric.\n")
     
@@ -806,7 +789,7 @@ check_blocks_weights_binarize <- function(cols, blocks, weights, include_ordered
     
     # check whether curr_weights vector has same length as corresponding column tuple
     if(length(curr_weights) != length(blocks[[weights_index]]))
-      stop("Argument 'weights' contains curr_weights tuple of invalid length.\n")
+      stop(paste0("Length of weight tuple ",weights_index," does not match length of block ",weights_index,".\n"))
     
     # check whether curr_weights are neither NaN nor infinite
     if(!all(is.finite(curr_weights)))
@@ -848,7 +831,7 @@ check_blocks_weights_binarize <- function(cols, blocks, weights, include_ordered
   nvar <- ncol(data)
   varnames <- colnames(data)
   
-  
+  # check blocks first and convert them into vector format if necessary
   if(!is.null(blocks))
   {
     # check column format first
@@ -989,10 +972,7 @@ check_blocks_weights_binarize <- function(cols, blocks, weights, include_ordered
       if(is.null(blocks))
         stop("Input argument 'weights' must not be in list format if no blocks have been specified.\n")
       
-      # weights in list format are only allowed, if blocks have been specified in list format as well 
-      if(!is.list(blocks))
-        stop("Input argument 'weights' must not be in list format if blocks haven't been specified in list format as well.\n")
-
+      
       # check whether all weights are valid
       check_weights_vec(unlist(weights))
       
@@ -1000,21 +980,50 @@ check_blocks_weights_binarize <- function(cols, blocks, weights, include_ordered
       if(!is.list(weights))
         stop("Argument 'weights' is not atomic or of type list.\n")
       
-      # check whether weights list is of same length as cols
-      if(length(weights) != length(blocks))
-        stop("The arguments 'weights' and 'blocks' have different lengths.\n")
-      
+      # initialize result weights
       res_weights <- rep(1, nvar)
       
-      for (j in seq_along(blocks))
+      # weights in list format are only allowed, if blocks have been specified in list format as well 
+      if(!is.list(blocks))
       {
-        tuple <- blocks[[j]]
-        curr_weights <- check_weights(j)
+        if(max(res_blocks) != length(weights))
+          stop("Argument 'weights' has to contain as many elements as there are blocks.\n")
         
-        if(length(tuple) != length(curr_weights))
-          stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
+        for(j in seq_along(weights))
+        {
+          # grab current block and weights
+          block = which(res_blocks == j)
+          curr_weights <- weights[[j]]
+          
+          # if current weights are neutral elements, e.g. either 0,1 or NULL, skip to next step
+          if(is.null(curr_weights) || (length(curr_weights) == 1 && curr_weights %in% c(0,1)))
+            next
+          
+          # check whether length of currents block and weights align
+          if(length(block) != length(curr_weights))
+            stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
+          
+          # adapt result weights
+          res_weights[block] <- curr_weights
+        }
+      }
+      else
+      {
+        # check whether weights list is of same length as cols
+        if(length(weights) != length(blocks))
+          stop("The arguments 'weights' and 'blocks' have different lengths.\n")
         
-        res_weights[tuple] <- curr_weights
+        
+        for (j in seq_along(blocks))
+        {
+          block <- blocks[[j]]
+          curr_weights <- check_weights(j)
+          
+          if(length(block) != length(curr_weights))
+            stop(paste0("Length of weight tuple ",j," does not match length of block ",j,".\n"))
+          
+          res_weights[block] <- curr_weights
+        }
       }
       
     }    
