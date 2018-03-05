@@ -19,10 +19,13 @@
 #'  \code{match_vars}. \cr The default is \code{blocks = NULL}, which tells this
 #'  function to automatically determine and impute on column blocks that have
 #'  identical missing value patterns.
-#'@param donors Integer indicating the size of the donor pool among which a draw
-#'  in the matching step is made. The default is \code{donors = 5L}. Setting
-#'  \code{donors = 1L} always selects the closest match (nearest neighbor), but
-#'  is not recommended.
+#'@param donors Integer or integer vector indicating the size of the donor pool
+#'  among which a draw in the matching step is made. If only a single number of
+#'  donors is specified, it is applied on all blocks, otherwise this parameter
+#'  needs to be a vector with as many elements as there blocks, specifying for
+#'  each of these blocks how many donors are to be drawn from. \cr
+#'  The default is \code{donors = 5L}. Setting \code{donors = 1L} always selects
+#'  the closest match (nearest neighbor), but is not recommended.
 #'@param weights Numeric vector or list of numeric vectors that allocates
 #'  weights to the columns of each block, giving us the possibility to punish or
 #'  mitigate differences in certain columns of the data when computing the
@@ -32,24 +35,31 @@
 #'  The default is \code{weights = NULL}, meaning that no weights should be
 #'  applied to any column at all. \cr
 #'  Note that in order to avoid any ambiguities, specifying this parameter in
-#'  list format is only allowed if blocks have been specified in list format as
-#'  well.
-#'@param distmetric Character string that determines which mathematical metric
-#'  we want to use to compute the distances between the multivariate
-#'  \code{y_obs} and \code{y_mis}. Options are \code{"euclidian"},
-#'  \code{"manhattan"}, \code{"mahalanobis"} and \code{"residual"}. The first
-#'  three options refer to the distance metrics of the same name, the latter is
-#'  a variant of the mahalanobis distance in which we consider the residual
-#'  covariance \code{cov(y_hat_obs - y_obs)} of the predicted model. This
-#'  distance has been proposed and recommended by Little (1988) and is also the
-#'  default. Note that the first two options are faster though, as they do not
-#'  involve any matrix computations.
-#'@param matchtype Integer indicating the type of matching distance to be used
-#'  in PMM. The default choice (\code{matchtype = 1L}) calculates the distance
-#'  between the \emph{predicted} values of \code{y_obs} and the \emph{drawn}
-#'  values of \code{y_mis} (called type-1 matching). Other choices are
-#'  \code{matchtype = 0L} distance between predicted values) and \code{matchtype
-#'  = 2L} (distance between drawn values).
+#'  list format is only allowed if blocks have been explicitly specified and NOT
+#'  automatically determined.
+#'@param distmetric Character string or character vector that determines which
+#'  mathematical metric we want to use to compute the distances between the
+#'  multivariate \code{y_obs} and \code{y_mis}. If only a single
+#'  metric is specified, it is applied on all blocks, otherwise this parameter
+#'  needs to be a vector with as many elements as there blocks, specifying for
+#'  each of these blocks which metric there is to use. \cr
+#'  The options are \code{"euclidian"}, \code{"manhattan"}, \code{"mahalanobis"}
+#'  and \code{"residual"}. The first three options refer to the distance metrics
+#'  of the same name, the latter is a variant of the mahalanobis distance in
+#'  which we consider the residual covariance \code{cov(y_hat_obs - y_obs)} of
+#'  the predicted model. This distance has been proposed and recommended by
+#'  Little (1988) and is also the default. Note that the first two options are
+#'  faster though, as they do not involve any matrix computations.
+#'@param matchtype Integer of integer vector indicating the type of matching
+#'  distance to be used in PMM. If only a single matchtype is specified, it is
+#'  applied on all blocks, otherwise this parameter needs to be a vector with as
+#'  many elements as there blocks, specifying for each of these blocks which
+#'  matchtype has to be used. \cr
+#'  The default choice (\code{matchtype = 1L}) calculates the distance between
+#'  the \emph{predicted} values of \code{y_obs} and the \emph{drawn} values of
+#'  \code{y_mis} (called type-1 matching). Other choices are \code{matchtype =
+#'  0L} distance between predicted values) and \code{matchtype = 2L} (distance
+#'  between drawn values).
 #'@param match_vars Vector specifying for each tuple which additional variable
 #'  has to be matched against. Can be an integer or character vector, either
 #'  specifying column indices or column names. \code{match_vars} must be the
@@ -57,18 +67,28 @@
 #'  disable this functionality for certain groups. Default is \code{match_vars =
 #'  NULL}, which completely disables this functionality.
 #'@param ridge The ridge penalty used in an internal call of
-#'  \code{mice:::.norm.draw()} to prevent problems with multicollinearity. The
-#'  default is \code{ridge = 1e-05}, which means that 0.01 percent of the
+#'  \code{mice::.norm.draw()} to prevent problems with multicollinearity. Can be
+#'  a single number or a numeric vector. If only a single ridge value is
+#'  specified, it is applied on all blocks, otherwise this parameter needs to be
+#'  a vector with as many elements as there blocks, specifying for each of these
+#'  blocks which ridge value has to be used. \cr
+#'  The default is \code{ridge = 1e-05}, which means that 0.01 percent of the
 #'  diagonal is added to the cross-product. Larger ridges may result in more
 #'  biased estimates. For highly noisy data (e.g. many junk variables), set
 #'  \code{ridge = 1e-06} or even lower to reduce bias. For highly collinear
 #'  data, set \code{ridge = 1e-04} or higher.
-#'@param minvar The minimum variance that we require predictors to have when building
-#'  a linear model to compute the \code{y_hat}-values. The default is \code{minvar
-#'  = 1e-04}.
+#'@param minvar The minimum variance that we require predictors to have when
+#'  building a linear model to compute the \code{y_hat}-values. Can be a single
+#'  number or a numeric vector. If only a single value is specified, it is
+#'  applied on all blocks, otherwise this parameter needs to be a vector with as
+#'  many elements as there blocks, specifying for each of these blocks which
+#'  minimum variance will b allowed. The default is \code{minvar = 1e-04}.
 #'@param maxcor The maximum correlation that we allow predictors to have when
-#'  building a linear model to compute the \code{y_hat}-values. The default is
-#'  \code{maxcor = 0.99}.
+#'  building a linear model to compute the \code{y_hat}-values.  Can be a single
+#'  number or a numeric vector. If only a single value is specified, it is
+#'  applied on all blocks, otherwise this parameter needs to be a vector with as
+#'  many elements as there blocks, specifying for each of these blocks which
+#'  maximum variance will be allowed. The default is \code{maxcor = 0.99}.
 #'  
 #'  
 #'@return List containing the following two elements:
@@ -256,6 +276,7 @@
 #'@examples
 #'
 #'
+#'\dontrun{
 #'#------------------------------------------------------------------------------
 #'# Example on modified 'mammalsleep' data set from mice, that has identical
 #'# missing data patterns on the column tuples ('ps','sws') and ('mls','gt')
@@ -310,7 +331,7 @@
 #'# run mice() first
 #'mids_mammal <- mice(mammal_data)
 #'
-#'## Now there are four options to specify the blocks and weights:
+#'## Now there are five options to specify the blocks and weights:
 #'
 #'# First option: specify blocks and weights in list format
 #'post_mammal <- mice.post.matching(obj = mids_mammal,
@@ -332,7 +353,15 @@
 #'                                  blocks = list(c("sws","ps"), c("mls","gt")),
 #'                                  weights = c(1,1,1,3,2,1,1,1,1,1,1))
 #'
-#'# Fourth option: only specify weights in vector format. If the user knows
+#'# Fourth option: specify blocks in vector format and weights in list format.
+#'# Note that the block number determines which tuple in the weights list it
+#'# corresponds to, and within each tuple in the list the weight correspondence is
+#'# determinded by left to right order of the data columns
+#'post_mammal <- mice.post.matching(obj = mids_mammal,
+#'                                  blocks = c(0,0,0,1,1,0,2,2,0,0,0),
+#'                                  weights = list(c(3,2), NULL))
+#'
+#'# Fifth option: only specify weights in vector format. If the user knows
 #'# beforehand that at least the column tuple he wants to impute and use weights
 #'# on have the same missing value patterns, he can assign weights to these using
 #'# the vector format, while letting mice.post.matching() find all other blocks
@@ -412,7 +441,7 @@
 #'
 #'# Finally, we can retransform to the original format
 #'res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
-#'
+#'}
 #'
 #'
 #'@seealso \code{\link[mice]{mice}}, \code{\link[mice]{mids-class}},
@@ -427,9 +456,10 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
   if (!is.mids(obj)) stop("Argument 'obj' should be of type mids.")
 
 	# check whether input set of column tuples is valid
-  # if blocks is null, look for columns with identical NA distributions
+  # if blocks haven't been specified, look for columns with identical NA distributions, otherwise check whether input blocks are valid
   if(is.null(blocks))
   {
+    # use internal helper function to find blocks
     blocks <- find_blocks(obj)
     if(length(blocks) == 0)
       stop("There are no column tuples with identical missing data patterns and valid imputation methods.\n")
@@ -437,6 +467,7 @@ mice.post.matching <- function(obj, blocks = NULL, donors = 5L, weights = NULL, 
   }
   else
   {
+    # delegate to helper check function
     blocks <- check_blocks(obj, blocks)
     blocks_specified <- TRUE
   }
