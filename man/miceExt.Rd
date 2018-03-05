@@ -52,5 +52,6 @@ given categorical data.
  \code{\link{mice.factorize}}, \code{\link[mice]{mice}}
 }
 \author{
-Tobias Schumacher, Philipp Gaffert, Stef van Buuren, Karin Groothuis-Oudshoorn
+Tobias Schumacher, Philipp Gaffert, Stef van Buuren, Karin
+ Groothuis-Oudshoorn
 }

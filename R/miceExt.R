@@ -41,7 +41,8 @@
 #'corresponding original categories, resulting in a proper imputation of the
 #'given categorical data.
 #'
-#'@author Tobias Schumacher, Philipp Gaffert, Stef van Buuren, Karin Groothuis-Oudshoorn
+#'@author Tobias Schumacher, Philipp Gaffert, Stef van Buuren, Karin
+#'  Groothuis-Oudshoorn
 #'
 #'@import mice
 #'@import stats

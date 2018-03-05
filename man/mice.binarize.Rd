@@ -57,9 +57,8 @@ initially assigns the weight \code{1} to all columns before expanding them
 and reducing the weight of binarized columns as explained above. In any way,
 it is strongly recommended to use the transformed output \code{weights} as
 the \code{weights} parameter in \code{mice.post.matching()}. \cr
-Note that in order to avoid any ambiguities, specifying this parameter in
-list format is only allowed if blocks have been specified in list format as
-well.}
+Note that specifying this parameter in list format is only allowed if blocks
+have been specified.}
 
 \item{pred_matrix}{A custom predictor matrix relating to input \code{data},
 which will get transformed into the format that fits to the binarized output
@@ -83,7 +82,7 @@ List containing the following five elements:
  element of this list would be "dummy_cols", which itself is a list of the
  column tuples that correspond to the transformed factor column from the
  original data set, and therefore works perfectly as input for
- \code{mice.post.matching()} (cf. examples below).}
+ \code{mice.post.matching()}.}
  
  \item{\strong{\code{blocks}}}{If input parameter \code{blocks} has been
  specified, an expanded version of that input is returned in vector format
@@ -225,6 +224,7 @@ the same factor do not predict each other.
 
 \examples{
 
+
 #------------------------------------------------------------------------------
 # first set of examples illustrating basic functionality
 #------------------------------------------------------------------------------
@@ -253,7 +253,7 @@ boys_bin$data
 # higher weight than 'bmi'. The second tuple is not weighted. 
 #------------------------------------------------------------------------------
 
-## Now there are three options to specify the blocks and weights:
+## Now there are four options to specify the blocks and weights:
 
 # First option: specify blocks and weights in list format
 boys_bin <- mice.binarize(data = boys_data,
@@ -274,6 +274,14 @@ post_mammal <- mice.binarize(data = boys_data,
 post_mammal <- mice.binarize(data = boys_data,
                                    blocks = list(c("hgt","bmi"), c("hc","gen", "phb")),
                                    weights = c(1,3,1,2,1,1,1,1,1))
+
+# Fourth option: specify blocks in vector format and weights in list format.
+# Note that the block number determines which tuple in the weights list it
+# corresponds to, and within each tuple in the list the weight correspondence is
+# determinded by left to right order of the data columns
+post_mammal <- mice.binarize(data = boys_data,
+                                   blocks = c(0,1,0,1,2,2,2,0,0),
+                                   weights = list(c(3,2), NULL))
 
 # check expanded blocks vector
 boys_bin$blocks

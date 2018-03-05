@@ -92,19 +92,6 @@ match_multivariate <- function(y, y_hat, ry, wy, donors, distmetric, dimweights,
     y_hat_mis <- t(t(y_hat_mis) * dimweights) # to get column-wise multiplication
   }
 
-  #=================================================================================================================================================
-  # DEPRECATED: NORMALIZATION AND JITTER
-  # normalize y_hat matrices by median norm of shared rows
-  #med_norm <- median(apply(rbind(y_hat_mis, y_hat_obs), MARGIN = 1, function(x) sqrt(sum(x^2))))
-  #y_hat_mis <- med_norm * y_hat_mis
-  #y_hat_obs <- med_norm * y_hat_obs
-
-  # add random epsilon error on normailized y_hat_mis to simulate a random tie break in RANN
-  #eps_matrix <- matrix(runif(nrow(y_hat_mis) * ncol(y_hat_mis), min = -1e-15, max = 1e-15), nrow = nrow(y_hat_mis) , ncol = ncol(y_hat_mis) )
-  #y_hat_mis <- y_hat_mis + eps_matrix
-  #=================================================================================================================================================
-
-
   # check whether we also match by external data
   # -> if yes, match on partitioned data
   if(is.null(match_partitions))

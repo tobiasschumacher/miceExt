@@ -57,9 +57,8 @@
 #'  and reducing the weight of binarized columns as explained above. In any way,
 #'  it is strongly recommended to use the transformed output \code{weights} as
 #'  the \code{weights} parameter in \code{mice.post.matching()}. \cr
-#'  Note that in order to avoid any ambiguities, specifying this parameter in
-#'  list format is only allowed if blocks have been specified in list format as
-#'  well.
+#'  Note that specifying this parameter in list format is only allowed if blocks
+#'  have been specified.
 #'@param pred_matrix A custom predictor matrix relating to input \code{data},
 #'  which will get transformed into the format that fits to the binarized output
 #'  data frame. The result of this transformation will be stored in the
@@ -211,7 +210,7 @@
 #'
 #'@examples
 #'
-#'\dontrun{
+#'
 #'#------------------------------------------------------------------------------
 #'# first set of examples illustrating basic functionality
 #'#------------------------------------------------------------------------------
@@ -231,7 +230,7 @@
 #'
 #'
 #'
-#'
+#'\dontrun{
 #'#------------------------------------------------------------------------------
 #'# Examples illustrating the combined usage of blocks and weights, relating to
 #'# the examples in the input format section above. As before, we want to impute  
@@ -240,7 +239,7 @@
 #'# higher weight than 'bmi'. The second tuple is not weighted. 
 #'#------------------------------------------------------------------------------
 #'
-#'## Now there are three options to specify the blocks and weights:
+#'## Now there are four options to specify the blocks and weights:
 #'
 #'# First option: specify blocks and weights in list format
 #'boys_bin <- mice.binarize(data = boys_data,
@@ -261,6 +260,14 @@
 #'post_mammal <- mice.binarize(data = boys_data,
 #'                                    blocks = list(c("hgt","bmi"), c("hc","gen", "phb")),
 #'                                    weights = c(1,3,1,2,1,1,1,1,1))
+#'
+#'# Fourth option: specify blocks in vector format and weights in list format.
+#'# Note that the block number determines which tuple in the weights list it
+#'# corresponds to, and within each tuple in the list the weight correspondence is
+#'# determinded by left to right order of the data columns
+#'post_mammal <- mice.binarize(data = boys_data,
+#'                                    blocks = c(0,1,0,1,2,2,2,0,0),
+#'                                    weights = list(c(3,2), NULL))
 #'
 #'# check expanded blocks vector
 #'boys_bin$blocks
