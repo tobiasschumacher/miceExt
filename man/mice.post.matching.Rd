@@ -285,6 +285,7 @@ Also offers a functionality to match imputations against observed variables.
 \examples{
 
 
+\dontrun{
 #------------------------------------------------------------------------------
 # Example on modified 'mammalsleep' data set from mice, that has identical
 # missing data patterns on the column tuples ('ps','sws') and ('mls','gt')
@@ -449,7 +450,7 @@ post_boys <- mice.post.matching(mids_boys,
 
 # Finally, we can retransform to the original format
 res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
-
+}
 
 
 }

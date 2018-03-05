@@ -244,7 +244,7 @@ boys_bin$data
 
 
 
-
+\dontrun{
 #------------------------------------------------------------------------------
 # Examples illustrating the combined usage of blocks and weights, relating to
 # the examples in the input format section above. As before, we want to impute  
@@ -360,7 +360,7 @@ post_boys <- mice.post.matching(mids_boys,
 
 # Finally, we can retransform to the original format
 res_boys <- mice.factorize(post_boys$midsobj, boys_bin$par_list)
-
+}
 
 
 }
