@@ -68,7 +68,7 @@ included in the mice-package with the functionalities of the package. This works
 
 2. Run `mice()` on binarized data and post-process the result with `mice.post.matching()`, as it is very likely that `mice()` imputed multiple ones among one set of dummy variables:  
 	 ```
-	 # run mice, note that we need to grab `boys_bin$data` and also use `boys_bin$pred_matrix` as predictor matrix for mice() 
+	 # run mice, note that we need to grab boys_bin$data and also use boys_bin$pred_matrix as predictor matrix for mice() 
 	 # to obtain cleaner models
 	 mids_boys <- mice(boys_bin$data, predictorMatrix = boys_bin$pred_matrix)  
 	 
